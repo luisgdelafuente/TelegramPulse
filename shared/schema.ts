@@ -4,7 +4,9 @@ import { z } from "zod";
 
 export const configurations = pgTable("configurations", {
   id: serial("id").primaryKey(),
-  telegramApiKey: text("telegram_api_key").notNull(),
+  telegramApiId: text("telegram_api_id").notNull(),
+  telegramApiHash: text("telegram_api_hash").notNull(),
+  telegramPhone: text("telegram_phone").notNull(),
   openaiApiKey: text("openai_api_key").notNull(),
   channels: text("channels").array().notNull().default([]),
   createdAt: timestamp("created_at").defaultNow(),
@@ -33,10 +35,10 @@ export const statistics = pgTable("statistics", {
   lastUpdate: timestamp("last_update").defaultNow(),
 });
 
-export const insertConfigurationSchema = createInsertSchema(configurations).pick({
-  telegramApiKey: true,
-  openaiApiKey: true,
-  channels: true,
+export const insertConfigurationSchema = createInsertSchema(configurations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
 export const insertAnalysisSchema = createInsertSchema(analyses).pick({

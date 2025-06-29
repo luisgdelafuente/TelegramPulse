@@ -19,7 +19,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const safeConfig = {
         id: config.id,
         channels: config.channels,
-        hasApiKeys: !!(config.telegramApiKey && config.openaiApiKey),
+        hasApiKeys: !!(config.telegramApiId && config.telegramApiHash && config.telegramPhone && config.openaiApiKey),
         createdAt: config.createdAt,
         updatedAt: config.updatedAt,
       };
@@ -98,8 +98,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "No configuration found. Please configure API keys and channels first." });
       }
       
-      if (!config.telegramApiKey || !config.openaiApiKey) {
-        return res.status(400).json({ message: "API keys not configured" });
+      if (!config.telegramApiId || !config.telegramApiHash || !config.telegramPhone || !config.openaiApiKey) {
+        return res.status(400).json({ message: "API credentials not configured" });
       }
       
       if (config.channels.length === 0) {
@@ -175,7 +175,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 }
 
 async function processAnalysis(analysisId: number, config: any) {
-  const telegramService = new TelegramService(config.telegramApiKey);
+  const telegramService = new TelegramService(config.telegramApiId, config.telegramApiHash, config.telegramPhone);
   const openaiService = new OpenAIService(config.openaiApiKey);
   
   try {
@@ -208,7 +208,18 @@ async function processAnalysis(analysisId: number, config: any) {
     });
     
     if (messages.length === 0) {
-      throw new Error("No messages found in the specified time range");
+      console.log("No messages found in the last 20 minutes. This may be because:");
+      console.log("1. The bot is not an administrator of the specified channels");
+      console.log("2. No messages were posted in the last 20 minutes");
+      console.log("3. The channels may not exist or be accessible");
+      
+      await storage.updateAnalysis(analysisId, {
+        status: "failed",
+        progress: 100,
+        error: "No se encontraron mensajes en los últimos 20 minutos. PASOS REQUERIDOS: 1) Ve a cada canal de Telegram que configuraste, 2) Agrega tu bot como administrador con permisos de 'Leer mensajes', 3) Verifica que los nombres de canal sean correctos (ej: @nombrecanal), 4) Asegúrate de que haya actividad reciente en los canales.",
+        completedAt: new Date(),
+      });
+      return;
     }
     
     await storage.updateAnalysis(analysisId, {
