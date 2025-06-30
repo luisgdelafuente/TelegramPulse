@@ -66,13 +66,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Test API connections
   app.post("/api/configuration/test", async (req, res) => {
     try {
-      const { telegramApiKey, openaiApiKey } = req.body;
+      const { telegramApiId, telegramApiHash, telegramPhone, openaiApiKey } = req.body;
       
-      if (!telegramApiKey || !openaiApiKey) {
-        return res.status(400).json({ message: "Both API keys are required" });
+      if (!telegramApiId || !telegramApiHash || !telegramPhone || !openaiApiKey) {
+        return res.status(400).json({ message: "All credentials are required (Telegram API ID, Hash, Phone and OpenAI API Key)" });
       }
       
-      const telegramService = new TelegramService(telegramApiKey);
+      const telegramService = new TelegramService(telegramApiId, telegramApiHash, telegramPhone);
       const openaiService = new OpenAIService(openaiApiKey);
       
       const [telegramTest, openaiTest] = await Promise.all([
