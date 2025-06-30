@@ -20,24 +20,35 @@ interface AnalysisResult {
   completedAt: string | null;
 }
 
+interface Configuration {
+  id: number;
+  channels: string[];
+  hasApiKeys: boolean;
+}
+
 export function ExecutionPanel() {
   const { toast } = useToast();
   const [currentAnalysisId, setCurrentAnalysisId] = useState<number | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Get configuration
-  const { data: configuration } = useQuery({
+  const { data: configuration } = useQuery<Configuration>({
     queryKey: ["/api/configuration"],
   });
 
   // Get latest analysis
-  const { data: latestAnalysis } = useQuery({
+  const { data: latestAnalysis } = useQuery<AnalysisResult>({
     queryKey: ["/api/analysis"],
   });
 
   // Get current analysis status (when processing)
-  const { data: currentAnalysis } = useQuery({
+  const { data: currentAnalysis } = useQuery<AnalysisResult | null>({
     queryKey: ["/api/analysis", currentAnalysisId],
+    queryFn: async () => {
+      if (!currentAnalysisId) return null;
+      const response = await apiRequest("GET", `/api/analysis/${currentAnalysisId}`, {});
+      return response.json();
+    },
     enabled: !!currentAnalysisId && isProcessing,
     refetchInterval: isProcessing ? 2000 : false,
   });
@@ -45,7 +56,7 @@ export function ExecutionPanel() {
   // Start analysis mutation
   const startAnalysisMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/analysis", {});
+      const response = await apiRequest("POST", "/api/analysis/start", {});
       return response.json();
     },
     onSuccess: (data) => {
