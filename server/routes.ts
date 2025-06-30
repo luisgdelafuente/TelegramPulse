@@ -91,7 +91,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Start analysis
-  app.post("/api/analysis", async (req, res) => {
+  app.post("/api/analysis/start", async (req, res) => {
     try {
       const config = await storage.getConfiguration();
       if (!config) {
@@ -175,16 +175,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 }
 
 async function processAnalysis(analysisId: number, config: any) {
+  console.log(`Starting analysis ${analysisId} with config:`, { 
+    telegramApiId: config.telegramApiId, 
+    channels: config.channels, 
+    hasOpenAI: !!config.openaiApiKey 
+  });
+  
   const telegramService = new TelegramService(config.telegramApiId, config.telegramApiHash, config.telegramPhone);
   const openaiService = new OpenAIService(config.openaiApiKey);
   
   try {
     // Update status: Starting
+    console.log(`Updating analysis ${analysisId} to processing state`);
     await storage.updateAnalysis(analysisId, {
       status: "processing",
       progress: 10,
       currentStep: "Connecting to Telegram API...",
     });
+    console.log(`Analysis ${analysisId} updated to processing state`);
     
     // Test Telegram connection
     const telegramConnected = await telegramService.testConnection();
