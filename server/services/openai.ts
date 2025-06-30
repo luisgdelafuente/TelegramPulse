@@ -37,12 +37,9 @@ export class OpenAIService {
 
     const startTime = Date.now();
     
-    // Group messages by channel
-    const messagesByChannel = this.groupMessagesByChannel(messages);
+    // Create consolidated text batch
+    const consolidatedText = this.createConsolidatedText(messages);
     
-    // Create analysis prompt
-    const prompt = this.createAnalysisPrompt(messagesByChannel);
-
     try {
       // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
       const response = await this.openai.chat.completions.create({
@@ -50,16 +47,16 @@ export class OpenAIService {
         messages: [
           {
             role: "system",
-            content: "You are an intelligence analyst. Generate a concise technical report in JSON format. Focus only on key topics and events."
+            content: "You are an intelligence analyst. Find the most global and relevant topics from the provided text and create a small briefing for each one. Return JSON format with topics and events arrays."
           },
           {
             role: "user",
-            content: prompt
+            content: consolidatedText
           }
         ],
         response_format: { type: "json_object" },
         temperature: 0.3,
-        max_tokens: 2000,  // Reduced for faster response
+        max_tokens: 1500,
       });
 
       const analysisResult = JSON.parse(response.choices[0].message.content || "{}");
@@ -72,7 +69,7 @@ export class OpenAIService {
         events: analysisResult.events || [],
         metadata: {
           totalMessages: messages.length,
-          channelsAnalyzed: Object.keys(messagesByChannel).length,
+          channelsAnalyzed: new Set(messages.map(m => m.channel)).size,
           timeRange: this.getTimeRange(messages),
           processingTime: `${processingTime}s`,
           model: "gpt-4o"
@@ -84,6 +81,39 @@ export class OpenAIService {
       console.error("OpenAI analysis failed:", error);
       throw new Error(`Failed to generate intelligence report: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
+  }
+
+  private createConsolidatedText(messages: TelegramMessage[]): string {
+    // Sort messages by timestamp
+    const sortedMessages = [...messages].sort((a, b) => a.date - b.date);
+    
+    let consolidatedText = `Analyze the following ${messages.length} messages from the last 60 minutes. Find the most global and relevant topics and create a small briefing for each one.
+
+JSON format:
+{
+  "topics": [{
+    "topic": "topic name",
+    "briefing": "concise summary of what's happening",
+    "keyPoints": ["key point 1", "key point 2"],
+    "timeframe": "when this occurred"
+  }],
+  "events": [{
+    "time": "HH:MM",
+    "event": "what happened",
+    "details": "brief details"
+  }]
+}
+
+Messages:
+`;
+
+    sortedMessages.forEach((msg, index) => {
+      const date = new Date(msg.date * 1000);
+      const timeStr = date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+      consolidatedText += `\n${index + 1}. [${timeStr}] ${msg.text.substring(0, 300)}${msg.text.length > 300 ? '...' : ''}`;
+    });
+
+    return consolidatedText;
   }
 
   private groupMessagesByChannel(messages: TelegramMessage[]): Record<string, TelegramMessage[]> {

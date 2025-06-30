@@ -178,6 +178,21 @@ export function ExecutionPanel() {
                 {currentAnalysis.currentStep || "Procesando..."}
               </div>
 
+              {/* Real-time Progress Indicator */}
+              <div className="text-center text-sm text-gray-500 animate-pulse">
+                {currentAnalysis.progress < 30 && "Conectando con Telegram..."}
+                {currentAnalysis.progress >= 30 && currentAnalysis.progress < 70 && "Recolectando mensajes de todos los canales..."}
+                {currentAnalysis.progress >= 70 && currentAnalysis.progress < 90 && "Procesando con inteligencia artificial..."}
+                {currentAnalysis.progress >= 90 && "Generando informe final..."}
+              </div>
+
+              {/* Estimated Time */}
+              <div className="text-center text-xs text-gray-400">
+                {currentAnalysis.progress < 70 && "Tiempo estimado: 15-30 segundos"}
+                {currentAnalysis.progress >= 70 && currentAnalysis.progress < 90 && "Analizando mensajes consolidados..."}
+                {currentAnalysis.progress >= 90 && "Casi listo..."}
+              </div>
+
               {/* Detailed Progress Info */}
               {(currentAnalysis.messagesCollected !== null || currentAnalysis.channelsProcessed !== null) && (
                 <div className="bg-gray-50 rounded-lg p-3">

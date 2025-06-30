@@ -265,7 +265,7 @@ async function processAnalysis(analysisId: number, config: any) {
     
     await storage.updateAnalysis(analysisId, {
       progress: 70,
-      currentStep: "Sending to OpenAI for analysis...",
+      currentStep: `Analyzing ${messages.length} messages with AI...`,
     });
     
     // Generate intelligence report
