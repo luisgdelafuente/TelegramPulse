@@ -46,11 +46,17 @@ export function ExecutionPanel() {
     queryKey: ["/api/analysis", currentAnalysisId],
     queryFn: async () => {
       if (!currentAnalysisId) return null;
-      const response = await apiRequest("GET", `/api/analysis/${currentAnalysisId}`, {});
-      return response.json();
+      try {
+        const response = await apiRequest("GET", `/api/analysis/${currentAnalysisId}`);
+        return response.json();
+      } catch (error) {
+        console.error("Error fetching analysis:", error);
+        return null;
+      }
     },
     enabled: !!currentAnalysisId && isProcessing,
     refetchInterval: isProcessing ? 2000 : false,
+    retry: false,
   });
 
   // Start analysis mutation
