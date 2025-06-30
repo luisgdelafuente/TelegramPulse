@@ -50,7 +50,7 @@ export class OpenAIService {
         messages: [
           {
             role: "system",
-            content: "You are an expert intelligence analyst. Analyze the provided Telegram messages and generate a comprehensive intelligence report in JSON format. Focus on identifying trends, patterns, and actionable insights."
+            content: "You are an intelligence analyst. Generate a concise technical report in JSON format. Focus only on key topics and events."
           },
           {
             role: "user",
@@ -59,7 +59,7 @@ export class OpenAIService {
         ],
         response_format: { type: "json_object" },
         temperature: 0.3,
-        max_tokens: 4000,
+        max_tokens: 2000,  // Reduced for faster response
       });
 
       const analysisResult = JSON.parse(response.choices[0].message.content || "{}");
@@ -82,7 +82,7 @@ export class OpenAIService {
       return report;
     } catch (error) {
       console.error("OpenAI analysis failed:", error);
-      throw new Error(`Failed to generate intelligence report: ${error.message}`);
+      throw new Error(`Failed to generate intelligence report: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -100,37 +100,25 @@ export class OpenAIService {
     const totalMessages = Object.values(messagesByChannel).reduce((sum, msgs) => sum + msgs.length, 0);
     const channelCount = Object.keys(messagesByChannel).length;
     
-    let prompt = `Read all these messages and create an intelligence report for the main topics discussed. 
+    let prompt = `Analyze these Telegram messages. Create a brief technical report.
 
-Provide telegraphic, technical briefings grouped by main topics. Do not include sentiment analysis or confidence scores.
-
-Required JSON format:
+JSON format:
 {
-  "topics": [
-    {
-      "topic": "Main topic name",
-      "briefing": "Technical summary of developments",
-      "keyPoints": ["Point 1", "Point 2", "Point 3"],
-      "timeframe": "When these events occurred",
-      "sources": "Number of channels reporting"
-    }
-  ],
-  "events": [
-    {
-      "time": "HH:MM",
-      "event": "What happened",
-      "details": "Technical details"
-    }
-  ],
-  "metadata": {
-    "totalMessages": ${totalMessages},
-    "channelsAnalyzed": ${channelCount},
-    "timeRange": "Collection period",
-    "model": "gpt-4o"
-  }
+  "topics": [{
+    "topic": "topic name",
+    "briefing": "technical summary",
+    "keyPoints": ["key1", "key2"],
+    "timeframe": "time period",
+    "sources": "channel count"
+  }],
+  "events": [{
+    "time": "HH:MM",
+    "event": "what",
+    "details": "brief details"
+  }]
 }
 
-
+Messages:
 `;
 
     // Flatten all messages with timestamps for chronological analysis

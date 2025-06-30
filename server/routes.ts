@@ -52,7 +52,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let config;
       
       if (existingConfig) {
-        config = await storage.updateConfiguration(existingConfig.id, validatedData);
+        // If API keys are empty strings, keep existing values
+        const updateData = {
+          ...validatedData,
+          telegramApiId: validatedData.telegramApiId || existingConfig.telegramApiId,
+          telegramApiHash: validatedData.telegramApiHash || existingConfig.telegramApiHash,
+          telegramPhone: validatedData.telegramPhone || existingConfig.telegramPhone,
+          openaiApiKey: validatedData.openaiApiKey || existingConfig.openaiApiKey,
+        };
+        config = await storage.updateConfiguration(existingConfig.id, updateData);
       } else {
         config = await storage.createConfiguration(validatedData);
       }

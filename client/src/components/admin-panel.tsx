@@ -19,7 +19,13 @@ export function AdminPanel() {
   const [channels, setChannels] = useState("");
 
   // Get current configuration
-  const { data: configuration } = useQuery({
+  const { data: configuration } = useQuery<{
+    id: number;
+    channels: string[];
+    hasApiKeys: boolean;
+    createdAt?: string;
+    updatedAt?: string;
+  }>({
     queryKey: ["/api/configuration"],
   });
 
@@ -115,7 +121,10 @@ export function AdminPanel() {
   };
 
   const handleSaveConfiguration = () => {
-    if (!telegramApiId || !telegramApiHash || !telegramPhone || !openaiApiKey) {
+    // Check if we're using placeholder values (already configured)
+    const isPlaceholder = telegramApiId === "••••••••";
+    
+    if (!isPlaceholder && (!telegramApiId || !telegramApiHash || !telegramPhone || !openaiApiKey)) {
       toast({
         title: "Datos incompletos",
         description: "Por favor completa todas las credenciales.",
@@ -138,19 +147,39 @@ export function AdminPanel() {
       return;
     }
 
-    saveConfigMutation.mutate({
-      telegramApiId,
-      telegramApiHash,
-      telegramPhone,
-      openaiApiKey,
-      channels: channelList,
-    });
+    // If placeholder values, only update channels
+    if (isPlaceholder) {
+      saveConfigMutation.mutate({
+        telegramApiId: "",  // Backend will keep existing values
+        telegramApiHash: "",
+        telegramPhone: "",
+        openaiApiKey: "",
+        channels: channelList,
+      });
+    } else {
+      saveConfigMutation.mutate({
+        telegramApiId,
+        telegramApiHash,
+        telegramPhone,
+        openaiApiKey,
+        channels: channelList,
+      });
+    }
   };
 
   // Populate form with existing configuration
   React.useEffect(() => {
-    if (configuration && configuration.channels) {
-      setChannels(configuration.channels.join("\n"));
+    if (configuration) {
+      if (configuration.channels) {
+        setChannels(configuration.channels.join("\n"));
+      }
+      // Show placeholder text when API keys are already configured
+      if (configuration.hasApiKeys) {
+        setTelegramApiId("••••••••");
+        setTelegramApiHash("••••••••");
+        setTelegramPhone("••••••••");
+        setOpenaiApiKey("••••••••");
+      }
     }
   }, [configuration]);
 
@@ -172,6 +201,25 @@ export function AdminPanel() {
           necesitas credenciales de usuario (no bot). Ve a <a href="https://my.telegram.org" target="_blank" className="text-blue-600 underline">my.telegram.org</a> para obtener API ID y API Hash.
         </AlertDescription>
       </Alert>
+
+      {/* Show configuration status */}
+      {configuration && !configuration.hasApiKeys && (
+        <Alert className="bg-yellow-50 border-yellow-200">
+          <Info className="h-4 w-4 text-yellow-600" />
+          <AlertDescription className="text-yellow-800">
+            <strong>Primera configuración:</strong> Ingresa todas las credenciales de API para comenzar a usar la aplicación.
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      {configuration?.hasApiKeys && (
+        <Alert className="bg-green-50 border-green-200">
+          <CheckCircle className="h-4 w-4 text-green-600" />
+          <AlertDescription className="text-green-800">
+            Las API keys ya están configuradas. Para actualizarlas, ingresa nuevas credenciales y guarda.
+          </AlertDescription>
+        </Alert>
+      )}
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* Telegram Configuration */}
