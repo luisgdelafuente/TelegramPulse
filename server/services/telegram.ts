@@ -17,7 +17,7 @@ export class TelegramService {
     this.phone = phone;
   }
 
-  async getRecentMessages(channels: string[], minutesBack: number = 20): Promise<TelegramMessage[]> {
+  async getRecentMessages(channels: string[], minutesBack: number = 60): Promise<TelegramMessage[]> {
     try {
       console.log(`Using Telegram MTProto to get messages from ${channels.length} channels`);
       

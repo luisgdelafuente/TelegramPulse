@@ -122,7 +122,7 @@ export class OpenAIService {
     const totalMessages = Object.values(messagesByChannel).reduce((sum, msgs) => sum + msgs.length, 0);
     const channelCount = Object.keys(messagesByChannel).length;
     
-    let prompt = `You are an expert intelligence analyst. Analyze the following ${totalMessages} Telegram messages from ${channelCount} public channels collected in the last 20 minutes.
+    let prompt = `You are an expert intelligence analyst. Analyze the following ${totalMessages} Telegram messages from ${channelCount} public channels collected in the last 60 minutes.
 
 CRITICAL: Generate a CONSOLIDATED intelligence report that aggregates all information across channels. Do NOT separate analysis by individual channels.
 

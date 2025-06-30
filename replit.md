@@ -51,9 +51,9 @@ This is a full-stack web application that aggregates and analyzes public Telegra
 
 ## Data Flow
 
-1. **Configuration**: Users input Telegram and OpenAI API keys plus target channels
+1. **Configuration**: API credentials auto-loaded from environment variables with default channels
 2. **Analysis Initiation**: System starts collecting messages from configured channels
-3. **Message Collection**: Recent messages (20 minutes) are fetched from each channel
+3. **Message Collection**: Recent messages (60 minutes) are fetched from each channel
 4. **AI Processing**: OpenAI GPT-4o analyzes collected messages for intelligence insights
 5. **Report Generation**: Structured intelligence reports are generated and stored
 6. **Results Display**: Reports are presented to users with download/sharing options
@@ -137,6 +137,8 @@ Changelog:
 - June 30, 2025. Fixed frontend-backend API endpoint mismatches for full web interface functionality
 - June 30, 2025. Confirmed real-time Telegram data collection (3 messages from @Slavyangrad and @TheIslanderNews)
 - June 30, 2025. Validated OpenAI GPT-4o analysis generating structured intelligence reports in 12.23 seconds
+- June 30, 2025. DEPLOYMENT: Changed time window from 20 to 60 minutes for broader data collection
+- June 30, 2025. DEPLOYMENT: Added automatic credential loading from .env file for seamless operation
 ```
 
 ## User Preferences
