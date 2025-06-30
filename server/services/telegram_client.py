@@ -99,7 +99,15 @@ async def main():
         await client.close()
         
     except Exception as e:
-        print(f"Error: {str(e)}", file=sys.stderr)
+        error_msg = str(e)
+        if "api_id/api_hash combination is invalid" in error_msg:
+            print(json.dumps({"error": "Invalid Telegram credentials. Check your API ID and Hash from my.telegram.org"}))
+        elif "phone number" in error_msg.lower():
+            print(json.dumps({"error": "Invalid phone number format. Use international format: +1234567890"}))
+        elif "network" in error_msg.lower() or "connection" in error_msg.lower():
+            print(json.dumps({"error": "Network connection failed. Check your internet connection"}))
+        else:
+            print(json.dumps({"error": f"Telegram error: {error_msg}"}))
         sys.exit(1)
 
 if __name__ == "__main__":

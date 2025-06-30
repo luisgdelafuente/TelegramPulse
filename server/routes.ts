@@ -197,8 +197,20 @@ async function processAnalysis(analysisId: number, config: any) {
       currentStep: "Collecting messages from channels...",
     });
     
-    // Collect messages
-    const messages = await telegramService.getRecentMessages(config.channels, 20);
+    // Collect messages with error handling
+    let messages: any[] = [];
+    try {
+      messages = await telegramService.getRecentMessages(config.channels, 20);
+    } catch (telegramError) {
+      console.error('Telegram service failed:', telegramError);
+      await storage.updateAnalysis(analysisId, {
+        status: "failed",
+        progress: 100,
+        error: `Error conectando con Telegram: ${telegramError.message}. Verifica tus credenciales MTProto (API ID, Hash, teléfono) en my.telegram.org`,
+        completedAt: new Date(),
+      });
+      return;
+    }
     
     await storage.updateAnalysis(analysisId, {
       progress: 50,

@@ -30,18 +30,42 @@ export class TelegramService {
       const pythonCommand = `python3 server/services/telegram_client.py "${this.apiId}" "${this.apiHash}" "${this.phone}" '${channelsJson}' ${minutesBack}`;
       
       console.log('Executing Telegram MTProto client...');
-      const { stdout, stderr } = await execAsync(pythonCommand);
+      console.log('Command:', pythonCommand);
       
-      if (stderr && !stderr.includes('Warning')) {
-        console.error('Telegram MTProto error:', stderr);
-        return [];
+      // Add timeout to prevent hanging
+      const { stdout, stderr } = await Promise.race([
+        execAsync(pythonCommand),
+        new Promise<never>((_, reject) => 
+          setTimeout(() => reject(new Error('Telegram script timeout after 60 seconds')), 60000)
+        )
+      ]);
+      
+      console.log('Python script stdout:', stdout);
+      if (stderr) {
+        console.log('Python script stderr:', stderr);
       }
       
-      const result = JSON.parse(stdout);
+      if (stderr && !stderr.includes('Warning') && !stderr.includes('DeprecationWarning')) {
+        console.error('Telegram MTProto error:', stderr);
+        throw new Error(`Telegram authentication failed: ${stderr}`);
+      }
+      
+      if (!stdout || stdout.trim() === '') {
+        console.error('No output from Telegram script');
+        throw new Error('No response from Telegram - check credentials and network');
+      }
+      
+      let result;
+      try {
+        result = JSON.parse(stdout);
+      } catch (parseError) {
+        console.error('Failed to parse JSON from Python script:', stdout);
+        throw new Error('Invalid response format from Telegram script');
+      }
       
       if (result.error) {
         console.error('Telegram client error:', result.error);
-        return [];
+        throw new Error(`Telegram error: ${result.error}`);
       }
       
       // result should be an array of TelegramMessage objects
@@ -51,7 +75,7 @@ export class TelegramService {
       return messages;
     } catch (error) {
       console.error('Failed to get messages from Telegram:', error);
-      return [];
+      throw error; // Re-throw to let the caller handle it
     }
   }
 
