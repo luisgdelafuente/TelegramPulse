@@ -102,6 +102,26 @@ This is a full-stack web application that aggregates and analyzes public Telegra
 - PostgreSQL connection via environment variables
 - Fallback to in-memory storage for development
 
+## Technical Issues Encountered
+
+### MTProto Authentication Problems
+1. **Incomplete Credential Requirements**: Initial implementation only used API ID and Hash, but Telegram MTProto requires additional configuration
+2. **Server Selection**: my.telegram.org shows Test and Production server configurations that may be required
+3. **Public Keys**: FCM credentials and MTProto server public keys are shown in the API dashboard
+4. **Authentication Flow**: MTProto requires phone verification code on first use, which our current implementation doesn't handle
+
+### Solution Implemented
+1. **Interactive Authentication Setup**: Created `telegram_auth_setup.py` for one-time SMS verification
+2. **Session Management**: Implemented persistent session storage using Telethon session files
+3. **Clear Error Handling**: System now detects missing authentication and provides setup instructions
+4. **Automated Script**: Added `setup_telegram_auth.sh` for streamlined authentication process
+
+### Current Status - RESOLVED
+- Authentication system now works with proper MTProto session management
+- One-time setup required via interactive script for SMS verification code
+- Subsequent requests use saved session automatically
+- Clear error messages guide users through setup process
+
 ## Changelog
 
 ```
@@ -110,6 +130,7 @@ Changelog:
 - June 29, 2025. Updated OpenAI service to generate consolidated intelligence reports (not per-channel analysis)
 - June 29, 2025. Modified frontend to display new consolidated report format with trends, events, correlations
 - June 29, 2025. Added proper intelligence analysis structure focusing on cross-channel patterns
+- June 30, 2025. Identified MTProto authentication complexity - requires server config and verification code handling
 ```
 
 ## User Preferences

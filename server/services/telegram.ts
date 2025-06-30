@@ -27,7 +27,7 @@ export class TelegramService {
       const execAsync = promisify(exec);
       
       const channelsJson = JSON.stringify(channels);
-      const pythonCommand = `python3 server/services/telegram_client.py "${this.apiId}" "${this.apiHash}" "${this.phone}" '${channelsJson}' ${minutesBack}`;
+      const pythonCommand = `python3 server/services/telegram_simple.py "${this.apiId}" "${this.apiHash}" "${this.phone}" '${channelsJson}' ${minutesBack}`;
       
       console.log('Executing Telegram MTProto client...');
       console.log('Command:', pythonCommand);
@@ -45,6 +45,12 @@ export class TelegramService {
         console.log('Python script stderr:', stderr);
       }
       
+      // Check for authentication setup requirements
+      if (stdout.includes('SETUP_REQUIRED') || stdout.includes('ERROR: No authenticated session found') || 
+          stdout.includes('ERROR: Session expired or invalid')) {
+        throw new Error('AUTHENTICATION_REQUIRED: Please run authentication setup first. Command: python3 server/services/telegram_auth_setup.py ' + this.apiId + ' ' + this.apiHash + ' ' + this.phone);
+      }
+      
       if (stderr && !stderr.includes('Warning') && !stderr.includes('DeprecationWarning')) {
         console.error('Telegram MTProto error:', stderr);
         throw new Error(`Telegram authentication failed: ${stderr}`);
@@ -55,11 +61,35 @@ export class TelegramService {
         throw new Error('No response from Telegram - check credentials and network');
       }
       
+      // Parse the output to extract messages
+      const startMarker = 'TELEGRAM_MESSAGES_START';
+      const endMarker = 'TELEGRAM_MESSAGES_END';
+      
+      const startIndex = stdout.indexOf(startMarker);
+      const endIndex = stdout.indexOf(endMarker);
+      
+      if (startIndex === -1 || endIndex === -1) {
+        // If no message markers found, check if there's useful error info
+        if (stdout.includes('Error:') || stdout.includes('ERROR:')) {
+          const errorLine = stdout.split('\n').find(line => line.includes('Error:') || line.includes('ERROR:'));
+          throw new Error(`Telegram client error: ${errorLine || 'Unknown error'}`);
+        }
+        console.log('No message markers found in output, assuming no messages');
+        return [];
+      }
+      
+      const jsonString = stdout.substring(startIndex + startMarker.length, endIndex).trim();
+      
+      if (!jsonString) {
+        console.log('No messages found in the specified time range');
+        return [];
+      }
+      
       let result;
       try {
-        result = JSON.parse(stdout);
+        result = JSON.parse(jsonString);
       } catch (parseError) {
-        console.error('Failed to parse JSON from Python script:', stdout);
+        console.error('Failed to parse JSON from Python script:', jsonString);
         throw new Error('Invalid response format from Telegram script');
       }
       
