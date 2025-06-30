@@ -2,31 +2,18 @@ import OpenAI from "openai";
 import type { TelegramMessage } from "./telegram";
 
 export interface IntelligenceReport {
-  executiveSummary: string;
-  mainTrends: Array<{
-    title: string;
-    description: string;
-    impact: string;
-    sources: number;
+  topics: Array<{
+    topic: string;
+    briefing: string;
+    keyPoints: string[];
+    timeframe: string;
+    sources: string;
   }>;
-  highImpactEvents: Array<{
-    timestamp: string;
+  events: Array<{
+    time: string;
     event: string;
-    description: string;
-    crossChannelConfirmation: boolean;
+    details: string;
   }>;
-  correlations: Array<{
-    pattern: string;
-    description: string;
-    significance: string;
-  }>;
-  sentimentAnalysis: {
-    overall: "positive" | "neutral" | "negative";
-    confidence: number;
-    breakdown: string;
-  };
-  recommendations: string[];
-  confidence: number;
   metadata: {
     totalMessages: number;
     channelsAnalyzed: number;
@@ -81,23 +68,14 @@ export class OpenAIService {
       
       // Structure the response according to our interface
       const report: IntelligenceReport = {
-        executiveSummary: analysisResult.executiveSummary || "No summary available",
-        mainTrends: analysisResult.mainTrends || [],
-        highImpactEvents: analysisResult.highImpactEvents || [],
-        correlations: analysisResult.correlations || [],
-        sentimentAnalysis: analysisResult.sentimentAnalysis || {
-          overall: "neutral",
-          confidence: 50,
-          breakdown: "No sentiment data available"
-        },
-        recommendations: analysisResult.recommendations || [],
-        confidence: Math.max(0, Math.min(100, analysisResult.confidence || 75)),
+        topics: analysisResult.topics || [],
+        events: analysisResult.events || [],
         metadata: {
           totalMessages: messages.length,
           channelsAnalyzed: Object.keys(messagesByChannel).length,
           timeRange: this.getTimeRange(messages),
           processingTime: `${processingTime}s`,
-          model: "gpt-4o",
+          model: "gpt-4o"
         }
       };
 
@@ -122,49 +100,36 @@ export class OpenAIService {
     const totalMessages = Object.values(messagesByChannel).reduce((sum, msgs) => sum + msgs.length, 0);
     const channelCount = Object.keys(messagesByChannel).length;
     
-    let prompt = `You are an expert intelligence analyst. Analyze the following ${totalMessages} Telegram messages from ${channelCount} public channels collected in the last 60 minutes.
+    let prompt = `Read all these messages and create an intelligence report for the main topics discussed. 
 
-CRITICAL: Generate a CONSOLIDATED intelligence report that aggregates all information across channels. Do NOT separate analysis by individual channels.
+Provide telegraphic, technical briefings grouped by main topics. Do not include sentiment analysis or confidence scores.
 
 Required JSON format:
 {
-  "executiveSummary": "Consolidated overview of all key findings across all sources",
-  "mainTrends": [
+  "topics": [
     {
-      "title": "Primary trend title",
-      "description": "Detailed cross-channel analysis of this trend", 
-      "impact": "Assessment of significance and potential impact",
-      "sources": "Number of channels reporting this trend"
+      "topic": "Main topic name",
+      "briefing": "Technical summary of developments",
+      "keyPoints": ["Point 1", "Point 2", "Point 3"],
+      "timeframe": "When these events occurred",
+      "sources": "Number of channels reporting"
     }
   ],
-  "highImpactEvents": [
+  "events": [
     {
-      "timestamp": "HH:MM format",
-      "event": "Brief event title",
-      "description": "Detailed description with cross-channel validation",
-      "crossChannelConfirmation": "true/false - if multiple channels reported this"
+      "time": "HH:MM",
+      "event": "What happened",
+      "details": "Technical details"
     }
   ],
-  "correlations": [
-    {
-      "pattern": "Correlation pattern identified",
-      "description": "How different pieces of information connect across channels",
-      "significance": "Why this correlation matters"
-    }
-  ],
-  "sentimentAnalysis": {
-    "overall": "positive/neutral/negative",
-    "confidence": "0-100 confidence score",
-    "breakdown": "Detailed sentiment analysis across all content"
-  },
-  "recommendations": [
-    "Strategic recommendation based on consolidated analysis",
-    "Actionable insight derived from cross-channel patterns"
-  ],
-  "confidence": "1-100 overall confidence in the consolidated analysis"
+  "metadata": {
+    "totalMessages": ${totalMessages},
+    "channelsAnalyzed": ${channelCount},
+    "timeRange": "Collection period",
+    "model": "gpt-4o"
+  }
 }
 
-ALL MESSAGES (analyze as one consolidated dataset):
 
 `;
 
@@ -183,15 +148,7 @@ ALL MESSAGES (analyze as one consolidated dataset):
       prompt += `${index + 1}. [${timeStr}] [@${item.channel}] ${item.msg.text.substring(0, 400)}${item.msg.text.length > 400 ? '...' : ''}\n`;
     });
 
-    prompt += `\nAnalysis Requirements:
-1. AGGREGATE all information - do not separate by channel
-2. IDENTIFY cross-channel patterns and correlations
-3. PRIORITIZE events by impact and cross-source validation
-4. CORRELATE timestamps to identify event sequences
-5. SYNTHESIZE insights from the complete dataset
-6. FOCUS on intelligence value, not channel-by-channel summaries
-
-Generate a professional consolidated intelligence assessment.`;
+    prompt += `\nProvide technical briefings grouped by topics only.`;
 
     return prompt;
   }
