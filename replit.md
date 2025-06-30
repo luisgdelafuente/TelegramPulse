@@ -53,10 +53,10 @@ This is a full-stack web application that aggregates and analyzes public Telegra
 
 1. **Configuration**: API credentials auto-loaded from environment variables with default channels
 2. **Analysis Initiation**: System starts collecting messages from configured channels
-3. **Message Collection**: Recent messages (60 minutes) are fetched from each channel
-4. **AI Processing**: OpenAI GPT-4o analyzes collected messages for intelligence insights
-5. **Report Generation**: Structured intelligence reports are generated and stored
-6. **Results Display**: Reports are presented to users with download/sharing options
+3. **Message Collection**: Recent messages (60 minutes) are fetched from each channel using MTProto
+4. **AI Processing**: OpenAI GPT-4o analyzes collected messages for technical intelligence insights
+5. **Report Generation**: Telegraphic, technical briefings grouped by topics (no sentiment analysis)
+6. **Results Display**: Reports presented with topics, events, and metadata sections
 
 ## External Dependencies
 
@@ -120,9 +120,11 @@ This is a full-stack web application that aggregates and analyzes public Telegra
 - Complete end-to-end functionality confirmed working
 - Authentication system using MTProto session management
 - Real-time data collection from Telegram channels (tested with @Slavyangrad and @TheIslanderNews)
-- OpenAI GPT-4o intelligence analysis generating structured reports
+- OpenAI GPT-4o generating telegraphic, technical briefings grouped by topics
 - Web interface with configuration, execution, and statistics panels
 - Frontend-backend API integration fully functional
+- No sentiment analysis or confidence scoring in reports
+- 60-minute time window for message collection implemented system-wide
 
 ## Changelog
 
@@ -139,6 +141,11 @@ Changelog:
 - June 30, 2025. Validated OpenAI GPT-4o analysis generating structured intelligence reports in 12.23 seconds
 - June 30, 2025. DEPLOYMENT: Changed time window from 20 to 60 minutes for broader data collection
 - June 30, 2025. DEPLOYMENT: Added automatic credential loading from .env file for seamless operation
+- June 30, 2025. FINAL UPDATE: Modified OpenAI prompt to generate telegraphic, technical briefings only
+- June 30, 2025. FINAL UPDATE: Removed all sentiment analysis and confidence scoring from reports
+- June 30, 2025. FINAL UPDATE: Updated frontend to display topics and events sections with proper metadata
+- June 30, 2025. FINAL UPDATE: Fixed all JSX syntax errors and component structure issues
+- June 30, 2025. FINAL UPDATE: Confirmed 13 messages collected and processed into technical intelligence report
 ```
 
 ## User Preferences
