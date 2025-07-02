@@ -21,6 +21,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           telegramPhone: process.env.TELEGRAM_PHONE,
           openaiApiKey: process.env.OPENAI_API_KEY,
           channels: ["@Slavyangrad", "@TheIslanderNews"],
+          promptTemplate: "Analyze the following Telegram messages and generate a concise intelligence report. Focus on key topics, events, and significant developments. Provide clear, factual briefings without sentiment analysis.",
+          timeWindowMinutes: 60,
         });
       }
       
@@ -33,6 +35,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         id: config.id,
         channels: config.channels,
         hasApiKeys: !!(config.telegramApiId && config.telegramApiHash && config.telegramPhone && config.openaiApiKey),
+        promptTemplate: config.promptTemplate,
+        timeWindowMinutes: config.timeWindowMinutes,
         createdAt: config.createdAt,
         updatedAt: config.updatedAt,
       };

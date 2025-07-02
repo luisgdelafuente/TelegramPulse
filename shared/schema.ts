@@ -9,6 +9,8 @@ export const configurations = pgTable("configurations", {
   telegramPhone: text("telegram_phone").notNull(),
   openaiApiKey: text("openai_api_key").notNull(),
   channels: text("channels").array().notNull().default([]),
+  promptTemplate: text("prompt_template").notNull().default("Analyze the following Telegram messages and generate a concise intelligence report. Focus on key topics, events, and significant developments. Provide clear, factual briefings without sentiment analysis."),
+  timeWindowMinutes: integer("time_window_minutes").notNull().default(60),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

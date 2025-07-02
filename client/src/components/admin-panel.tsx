@@ -17,12 +17,16 @@ export function AdminPanel() {
   const [telegramPhone, setTelegramPhone] = useState("");
   const [openaiApiKey, setOpenaiApiKey] = useState("");
   const [channels, setChannels] = useState("");
+  const [promptTemplate, setPromptTemplate] = useState("");
+  const [timeWindowMinutes, setTimeWindowMinutes] = useState(60);
 
   // Get current configuration
   const { data: configuration } = useQuery<{
     id: number;
     channels: string[];
     hasApiKeys: boolean;
+    promptTemplate?: string;
+    timeWindowMinutes?: number;
     createdAt?: string;
     updatedAt?: string;
   }>({
@@ -70,12 +74,14 @@ export function AdminPanel() {
 
   // Save configuration
   const saveConfigMutation = useMutation({
-    mutationFn: async ({ telegramApiId, telegramApiHash, telegramPhone, openaiApiKey, channels }: { 
+    mutationFn: async ({ telegramApiId, telegramApiHash, telegramPhone, openaiApiKey, channels, promptTemplate, timeWindowMinutes }: { 
       telegramApiId: string; 
       telegramApiHash: string; 
       telegramPhone: string; 
       openaiApiKey: string; 
-      channels: string[]; 
+      channels: string[];
+      promptTemplate: string;
+      timeWindowMinutes: number;
     }) => {
       const response = await apiRequest("POST", "/api/configuration", {
         telegramApiId,
@@ -83,6 +89,8 @@ export function AdminPanel() {
         telegramPhone,
         openaiApiKey,
         channels,
+        promptTemplate,
+        timeWindowMinutes,
       });
       return response.json();
     },
@@ -147,7 +155,7 @@ export function AdminPanel() {
       return;
     }
 
-    // If placeholder values, only update channels
+    // If placeholder values, only update channels and settings
     if (isPlaceholder) {
       saveConfigMutation.mutate({
         telegramApiId: "",  // Backend will keep existing values
@@ -155,6 +163,8 @@ export function AdminPanel() {
         telegramPhone: "",
         openaiApiKey: "",
         channels: channelList,
+        promptTemplate,
+        timeWindowMinutes,
       });
     } else {
       saveConfigMutation.mutate({
@@ -163,6 +173,8 @@ export function AdminPanel() {
         telegramPhone,
         openaiApiKey,
         channels: channelList,
+        promptTemplate,
+        timeWindowMinutes,
       });
     }
   };
@@ -172,6 +184,14 @@ export function AdminPanel() {
     if (configuration) {
       if (configuration.channels) {
         setChannels(configuration.channels.join("\n"));
+      }
+      if (configuration.promptTemplate) {
+        setPromptTemplate(configuration.promptTemplate);
+      } else {
+        setPromptTemplate("Analyze the following Telegram messages and generate a concise intelligence report. Focus on key topics, events, and significant developments. Provide clear, factual briefings without sentiment analysis.");
+      }
+      if (configuration.timeWindowMinutes) {
+        setTimeWindowMinutes(configuration.timeWindowMinutes);
       }
       // Show placeholder text when API keys are already configured
       if (configuration.hasApiKeys) {
@@ -331,6 +351,64 @@ export function AdminPanel() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Analysis Settings */}
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* OpenAI Prompt Template */}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  OpenAI Prompt Template
+                </h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Customize the prompt used for AI analysis of Telegram messages
+                </p>
+                <Textarea
+                  placeholder="Analyze the following Telegram messages..."
+                  value={promptTemplate}
+                  onChange={(e) => setPromptTemplate(e.target.value)}
+                  rows={8}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Time Window Settings */}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  Analysis Settings
+                </h3>
+                <div className="space-y-3">
+                  <div>
+                    <Label htmlFor="time-window">Time Window (minutes)</Label>
+                    <p className="text-sm text-gray-600 mb-2">
+                      How far back to collect messages for analysis
+                    </p>
+                    <Input
+                      id="time-window"
+                      type="number"
+                      min="5"
+                      max="1440"
+                      placeholder="60"
+                      value={timeWindowMinutes}
+                      onChange={(e) => setTimeWindowMinutes(parseInt(e.target.value) || 60)}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Range: 5 minutes to 24 hours (1440 minutes)
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Save Button */}
       <div className="flex justify-center">
