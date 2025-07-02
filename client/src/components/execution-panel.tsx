@@ -333,11 +333,19 @@ export function ExecutionPanel() {
 
                 {/* Action Buttons */}
                 <div className="flex space-x-3 mt-6">
-                  <Button variant="outline" className="flex-1">
+                  <Button 
+                    variant="outline" 
+                    className="flex-1"
+                    onClick={() => handleExportReport(analysisToShow)}
+                  >
                     <Download className="w-4 h-4 mr-2" />
                     Exportar
                   </Button>
-                  <Button variant="outline" className="flex-1">
+                  <Button 
+                    variant="outline" 
+                    className="flex-1"
+                    onClick={() => handleShareReport(analysisToShow)}
+                  >
                     <Share className="w-4 h-4 mr-2" />
                     Compartir
                   </Button>

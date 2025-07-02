@@ -195,10 +195,11 @@ Changelog:
   - Added detailed console logging for backend progress tracking
 - **Status**: WORKING - Real-time progress updates functioning properly during analysis
 
-### 5. Remove "Eventos Temporales" Section from Reports
-- **Current**: Reports show both topics and temporal events sections
-- **Required**: Only show topics-based organization
-- **Implementation**: Modify report display component to exclude events
+### 5. Remove "Eventos Temporales" Section from Reports ✓ COMPLETED
+- **Issue**: ~~Reports show both topics and temporal events sections~~ FIXED
+- **Solution**: Removed "Eventos Temporales" section from both execution panel components
+- **Result**: Reports now only show "Temas Principales" (topics-based organization)
+- **Status**: WORKING - Events section no longer displayed in intelligence reports
 
 ### 6. Fix Non-Functional Export and Share Buttons
 - **Current**: Buttons displayed but not implemented
