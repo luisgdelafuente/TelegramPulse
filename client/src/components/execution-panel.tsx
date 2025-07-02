@@ -298,28 +298,7 @@ export function ExecutionPanel() {
                     </div>
                   )}
 
-                  {/* Events Section */}
-                  {analysisToShow.report.events && analysisToShow.report.events.length > 0 && (
-                    <div className="mb-6">
-                      <h4 className="font-semibold text-green-800 mb-3 flex items-center">
-                        <i className="fas fa-clock mr-2"></i>
-                        Eventos Temporales
-                      </h4>
-                      {analysisToShow.report.events.map((event: any, index: number) => (
-                        <div key={index} className="bg-green-50 border border-green-200 rounded-lg p-3 mb-2">
-                          <div className="flex items-start space-x-3">
-                            <span className="text-xs font-mono bg-green-100 px-2 py-1 rounded">
-                              {event.time}
-                            </span>
-                            <div className="flex-1">
-                              <h6 className="font-medium text-gray-800">{event.event}</h6>
-                              <p className="text-sm text-gray-600 mt-1">{event.details}</p>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+
 
                   {/* Metadata Section */}
                   {analysisToShow.report.metadata && (
