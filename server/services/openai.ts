@@ -30,15 +30,19 @@ export class OpenAIService {
     this.openai = new OpenAI({ apiKey });
   }
 
-  async generateIntelligenceReport(messages: TelegramMessage[]): Promise<IntelligenceReport> {
+  async generateIntelligenceReport(messages: TelegramMessage[], promptTemplate?: string, timeWindowMinutes?: number): Promise<IntelligenceReport> {
     if (messages.length === 0) {
       throw new Error("No messages to analyze");
     }
 
     const startTime = Date.now();
     
+    // Use configured prompt template or default
+    const systemPrompt = promptTemplate || "Analyze the following Telegram messages and generate a concise intelligence report. Focus on key topics, events, and significant developments. Provide clear, factual briefings without sentiment analysis.";
+    const timeWindow = timeWindowMinutes || 60;
+    
     // Create consolidated text batch
-    const consolidatedText = this.createConsolidatedText(messages);
+    const consolidatedText = this.createConsolidatedText(messages, timeWindow);
     
     try {
       // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
@@ -47,7 +51,7 @@ export class OpenAIService {
         messages: [
           {
             role: "system",
-            content: "You are an intelligence analyst. Find the most global and relevant topics from the provided text and create a small briefing for each one. Return JSON format with topics and events arrays."
+            content: `${systemPrompt} Return JSON format with topics and events arrays.`
           },
           {
             role: "user",
@@ -83,11 +87,11 @@ export class OpenAIService {
     }
   }
 
-  private createConsolidatedText(messages: TelegramMessage[]): string {
+  private createConsolidatedText(messages: TelegramMessage[], timeWindowMinutes: number = 60): string {
     // Sort messages by timestamp
     const sortedMessages = [...messages].sort((a, b) => a.date - b.date);
     
-    let consolidatedText = `Analyze the following ${messages.length} messages from the last 60 minutes. Find the most global and relevant topics and create a small briefing for each one.
+    let consolidatedText = `Analyze the following ${messages.length} messages from the last ${timeWindowMinutes} minutes. Find the most global and relevant topics and create a small briefing for each one.
 
 JSON format:
 {

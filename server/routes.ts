@@ -233,7 +233,7 @@ async function processAnalysis(analysisId: number, config: any) {
     // Collect messages with error handling
     let messages: any[] = [];
     try {
-      messages = await telegramService.getRecentMessages(config.channels, 60);
+      messages = await telegramService.getRecentMessages(config.channels, config.timeWindowMinutes || 60);
     } catch (telegramError) {
       console.error('Telegram service failed:', telegramError);
       await storage.updateAnalysis(analysisId, {
@@ -253,7 +253,7 @@ async function processAnalysis(analysisId: number, config: any) {
     });
     
     if (messages.length === 0) {
-      console.log("No messages found in the last 60 minutes. This may be because:");
+      console.log(`No messages found in the last ${config.timeWindowMinutes || 60} minutes. This may be because:`);
       console.log("1. The bot is not an administrator of the specified channels");
       console.log("2. No messages were posted in the last 60 minutes");
       console.log("3. The channels may not exist or be accessible");
@@ -261,7 +261,7 @@ async function processAnalysis(analysisId: number, config: any) {
       await storage.updateAnalysis(analysisId, {
         status: "failed",
         progress: 100,
-        error: "No se encontraron mensajes en los últimos 60 minutos. PASOS REQUERIDOS: 1) Ve a cada canal de Telegram que configuraste, 2) Agrega tu bot como administrador con permisos de 'Leer mensajes', 3) Verifica que los nombres de canal sean correctos (ej: @nombrecanal), 4) Asegúrate de que haya actividad reciente en los canales.",
+        error: `No se encontraron mensajes en los últimos ${config.timeWindowMinutes || 60} minutos. PASOS REQUERIDOS: 1) Ve a cada canal de Telegram que configuraste, 2) Agrega tu bot como administrador con permisos de 'Leer mensajes', 3) Verifica que los nombres de canal sean correctos (ej: @nombrecanal), 4) Asegúrate de que haya actividad reciente en los canales.`,
         completedAt: new Date(),
       });
       return;
@@ -272,8 +272,8 @@ async function processAnalysis(analysisId: number, config: any) {
       currentStep: `Analyzing ${messages.length} messages with AI...`,
     });
     
-    // Generate intelligence report
-    const report = await openaiService.generateIntelligenceReport(messages);
+    // Generate intelligence report using configured prompt template
+    const report = await openaiService.generateIntelligenceReport(messages, config.promptTemplate, config.timeWindowMinutes || 60);
     
     await storage.updateAnalysis(analysisId, {
       progress: 90,
