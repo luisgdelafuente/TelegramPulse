@@ -166,13 +166,13 @@ Changelog:
   - **Home**: Report generation and viewing ✓
 - **Implementation**: ~~Add navigation between sections~~ Navigation component created ✓
 
-### 2. Admin Panel Enhancements
-- **Current**: Only shows API keys and channels
-- **Required**: Add editable fields for:
-  - OpenAI prompt template for report generation
-  - Time window parameter (currently hardcoded to 1 hour)
-  - All parameters should be editable and saved
-- **Implementation**: Extend admin panel with new configuration fields
+### 2. Admin Panel Enhancements ⚠️ NOT WORKING
+- **Current**: Fields added but configuration not being used by system
+- **Required**: Fix actual usage of configured settings:
+  - OpenAI prompt template for report generation ❌ (hardcoded prompt still used)
+  - Time window parameter ❌ (system ignores configured value)
+  - Configuration saving/loading mechanism ❌ (backend not properly using stored values)
+- **Implementation**: ⚠️ INCOMPLETE - UI exists but backend ignores the settings
 
 ### 3. Fix API Data Loading from Environment
 - **Issue**: Default API data not loading from .env file into admin panel

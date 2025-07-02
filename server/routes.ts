@@ -30,11 +30,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json(null);
       }
       
-      // Don't expose API keys in the response
+      // Check if environment variables are available and can populate fields
+      const hasEnvVars = !!(process.env.TELEGRAM_API_ID && process.env.TELEGRAM_API_HASH && 
+                           process.env.TELEGRAM_PHONE && process.env.OPENAI_API_KEY);
+      
+      // Don't expose API keys in the response, but indicate if env vars are available
       const safeConfig = {
         id: config.id,
         channels: config.channels,
         hasApiKeys: !!(config.telegramApiId && config.telegramApiHash && config.telegramPhone && config.openaiApiKey),
+        hasEnvVars: hasEnvVars,
         promptTemplate: config.promptTemplate,
         timeWindowMinutes: config.timeWindowMinutes,
         createdAt: config.createdAt,
@@ -44,6 +49,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(safeConfig);
     } catch (error) {
       res.status(500).json({ message: "Failed to get configuration" });
+    }
+  });
+
+  // Get environment variables for auto-population (only when no config exists)
+  app.get("/api/configuration/env", async (req, res) => {
+    try {
+      const config = await storage.getConfiguration();
+      
+      // Only provide env vars if no configuration exists yet
+      if (config) {
+        return res.status(403).json({ message: "Configuration already exists" });
+      }
+      
+      // Provide environment variables for auto-population
+      if (process.env.TELEGRAM_API_ID && process.env.TELEGRAM_API_HASH && 
+          process.env.TELEGRAM_PHONE && process.env.OPENAI_API_KEY) {
+        res.json({
+          telegramApiId: process.env.TELEGRAM_API_ID,
+          telegramApiHash: process.env.TELEGRAM_API_HASH,
+          telegramPhone: process.env.TELEGRAM_PHONE,
+          openaiApiKey: process.env.OPENAI_API_KEY,
+          channels: ["@Slavyangrad", "@TheIslanderNews"],
+          promptTemplate: "Analyze the following Telegram messages and generate a concise intelligence report. Focus on key topics, events, and significant developments. Provide clear, factual briefings without sentiment analysis.",
+          timeWindowMinutes: 60,
+        });
+      } else {
+        res.status(404).json({ message: "No environment variables found" });
+      }
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get environment configuration" });
     }
   });
 

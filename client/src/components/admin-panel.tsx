@@ -25,12 +25,27 @@ export function AdminPanel() {
     id: number;
     channels: string[];
     hasApiKeys: boolean;
+    hasEnvVars?: boolean;
     promptTemplate?: string;
     timeWindowMinutes?: number;
     createdAt?: string;
     updatedAt?: string;
   }>({
     queryKey: ["/api/configuration"],
+  });
+
+  // Get environment variables for auto-population (only when no config exists)
+  const { data: envConfig } = useQuery<{
+    telegramApiId: string;
+    telegramApiHash: string;
+    telegramPhone: string;
+    openaiApiKey: string;
+    channels: string[];
+    promptTemplate: string;
+    timeWindowMinutes: number;
+  }>({
+    queryKey: ["/api/configuration/env"],
+    enabled: !configuration, // Only fetch when no configuration exists
   });
 
   // Test API connections
@@ -179,9 +194,10 @@ export function AdminPanel() {
     }
   };
 
-  // Populate form with existing configuration
+  // Populate form with existing configuration or environment variables
   React.useEffect(() => {
     if (configuration) {
+      // Load existing configuration
       if (configuration.channels) {
         setChannels(configuration.channels.join("\n"));
       }
@@ -200,8 +216,17 @@ export function AdminPanel() {
         setTelegramPhone("••••••••");
         setOpenaiApiKey("••••••••");
       }
+    } else if (envConfig) {
+      // Auto-populate from environment variables when no configuration exists
+      setTelegramApiId(envConfig.telegramApiId);
+      setTelegramApiHash(envConfig.telegramApiHash);
+      setTelegramPhone(envConfig.telegramPhone);
+      setOpenaiApiKey(envConfig.openaiApiKey);
+      setChannels(envConfig.channels.join("\n"));
+      setPromptTemplate(envConfig.promptTemplate);
+      setTimeWindowMinutes(envConfig.timeWindowMinutes);
     }
-  }, [configuration]);
+  }, [configuration, envConfig]);
 
   return (
     <div className="space-y-6">
@@ -223,7 +248,16 @@ export function AdminPanel() {
       </Alert>
 
       {/* Show configuration status */}
-      {configuration && !configuration.hasApiKeys && (
+      {envConfig && !configuration && (
+        <Alert className="bg-blue-50 border-blue-200">
+          <CheckCircle className="h-4 w-4 text-blue-600" />
+          <AlertDescription className="text-blue-800">
+            <strong>Configuración automática:</strong> Los campos se han llenado automáticamente desde las variables de entorno. Revisa y guarda la configuración.
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      {configuration && !configuration.hasApiKeys && !envConfig && (
         <Alert className="bg-yellow-50 border-yellow-200">
           <Info className="h-4 w-4 text-yellow-600" />
           <AlertDescription className="text-yellow-800">
