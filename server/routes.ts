@@ -305,7 +305,7 @@ async function processAnalysis(analysisId: number, config: any) {
       progress: 10,
       currentStep: "Connecting to Telegram API...",
     });
-    console.log(`Analysis ${analysisId} updated to processing state`);
+    console.log(`Analysis ${analysisId} updated to processing state with 10% progress`);
     
     // Test Telegram connection
     const telegramConnected = await telegramService.testConnection();
@@ -317,6 +317,7 @@ async function processAnalysis(analysisId: number, config: any) {
       progress: 20,
       currentStep: "Collecting messages from channels...",
     });
+    console.log(`Analysis ${analysisId} updated to 20% - collecting messages`);
     
     // Collect messages with error handling
     let messages: any[] = [];
@@ -339,6 +340,7 @@ async function processAnalysis(analysisId: number, config: any) {
       messagesCollected: messages.length,
       channelsProcessed: config.channels.length,
     });
+    console.log(`Analysis ${analysisId} updated to 50% - ${messages.length} messages from ${config.channels.length} channels`);
     
     if (messages.length === 0) {
       console.log(`No messages found in the last ${config.timeWindowMinutes || 60} minutes. This may be because:`);

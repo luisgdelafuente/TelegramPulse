@@ -42,27 +42,20 @@ export function ExecutionPanel() {
   });
 
   // Get current analysis status (when processing)
-  const { data: currentAnalysis } = useQuery<AnalysisResult | null>({
+  const { data: currentAnalysis, refetch: refetchCurrentAnalysis } = useQuery<AnalysisResult | null>({
     queryKey: ["/api/analysis", currentAnalysisId],
-    queryFn: async () => {
-      if (!currentAnalysisId) return null;
-      try {
-        const response = await apiRequest("GET", `/api/analysis/${currentAnalysisId}`);
-        return response;
-      } catch (error) {
-        return null;
-      }
-    },
     enabled: !!currentAnalysisId,
-    refetchInterval: isProcessing ? 2000 : false,
+    refetchInterval: isProcessing ? 1000 : false, // More frequent updates (1 second)
+    refetchOnWindowFocus: false,
+    retry: 3,
   });
 
   const startAnalysisMutation = useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/analysis/start");
-      return response;
+    mutationFn: async (): Promise<AnalysisResult> => {
+      const response = await apiRequest("POST", "/api/analysis/start", {});
+      return response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: (data: AnalysisResult) => {
       setCurrentAnalysisId(data.id);
       setIsProcessing(true);
       toast({
@@ -82,24 +75,45 @@ export function ExecutionPanel() {
 
   // Monitor analysis completion
   useEffect(() => {
-    if (currentAnalysis && currentAnalysis.status === "completed") {
-      setIsProcessing(false);
-      setCurrentAnalysisId(null);
-      toast({
-        title: "Análisis completado",
-        description: "El informe de inteligencia está listo",
+    if (currentAnalysis) {
+      console.log('Analysis update:', {
+        id: currentAnalysis.id,
+        status: currentAnalysis.status,
+        progress: currentAnalysis.progress,
+        currentStep: currentAnalysis.currentStep
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/analysis"] });
-    } else if (currentAnalysis && currentAnalysis.status === "failed") {
-      setIsProcessing(false);
-      setCurrentAnalysisId(null);
-      toast({
-        title: "Análisis fallido",
-        description: currentAnalysis.error || "Error durante el procesamiento",
-        variant: "destructive",
-      });
+      
+      if (currentAnalysis.status === "completed") {
+        setIsProcessing(false);
+        setCurrentAnalysisId(null);
+        toast({
+          title: "Análisis completado",
+          description: "El informe de inteligencia está listo",
+        });
+        queryClient.invalidateQueries({ queryKey: ["/api/analysis"] });
+      } else if (currentAnalysis.status === "failed") {
+        setIsProcessing(false);
+        setCurrentAnalysisId(null);
+        toast({
+          title: "Análisis fallido",
+          description: currentAnalysis.error || "Error durante el procesamiento",
+          variant: "destructive",
+        });
+        queryClient.invalidateQueries({ queryKey: ["/api/analysis"] });
+      }
     }
   }, [currentAnalysis, toast]);
+
+  // Force refresh every 2 seconds when processing
+  useEffect(() => {
+    if (isProcessing && currentAnalysisId) {
+      const interval = setInterval(() => {
+        refetchCurrentAnalysis();
+      }, 2000);
+      
+      return () => clearInterval(interval);
+    }
+  }, [isProcessing, currentAnalysisId, refetchCurrentAnalysis]);
 
   const handleStartAnalysis = () => {
     if (!configuration?.hasApiKeys) {
@@ -170,12 +184,38 @@ export function ExecutionPanel() {
           {/* Progress Section */}
           {isProcessing && currentAnalysis && (
             <div className="mt-6 space-y-4 fade-in">
-              {/* Progress Bar */}
-              <Progress value={currentAnalysis.progress} className="w-full" />
+              {/* Progress Bar with percentage */}
+              <div className="space-y-2">
+                <Progress value={currentAnalysis.progress} className="w-full" />
+                <div className="flex justify-between text-xs text-gray-500">
+                  <span>Progreso</span>
+                  <span>{currentAnalysis.progress}%</span>
+                </div>
+              </div>
 
               {/* Status Message */}
               <div className="text-center font-medium text-gray-700">
                 {currentAnalysis.currentStep || "Procesando..."}
+              </div>
+
+              {/* Visual Step Indicators */}
+              <div className="flex justify-center space-x-6 py-2">
+                <div className={`flex flex-col items-center space-y-1 ${currentAnalysis.progress >= 10 ? 'text-green-600' : 'text-gray-400'}`}>
+                  {currentAnalysis.progress >= 10 ? <CheckCircle className="w-5 h-5" /> : <div className="w-5 h-5 border-2 border-current rounded-full animate-pulse" />}
+                  <span className="text-xs">Conectar</span>
+                </div>
+                <div className={`flex flex-col items-center space-y-1 ${currentAnalysis.progress >= 30 ? 'text-green-600' : 'text-gray-400'}`}>
+                  {currentAnalysis.progress >= 30 ? <CheckCircle className="w-5 h-5" /> : <div className="w-5 h-5 border-2 border-current rounded-full animate-pulse" />}
+                  <span className="text-xs">Recopilar</span>
+                </div>
+                <div className={`flex flex-col items-center space-y-1 ${currentAnalysis.progress >= 70 ? 'text-green-600' : 'text-gray-400'}`}>
+                  {currentAnalysis.progress >= 70 ? <CheckCircle className="w-5 h-5" /> : <div className="w-5 h-5 border-2 border-current rounded-full animate-pulse" />}
+                  <span className="text-xs">Analizar</span>
+                </div>
+                <div className={`flex flex-col items-center space-y-1 ${currentAnalysis.progress >= 100 ? 'text-green-600' : 'text-gray-400'}`}>
+                  {currentAnalysis.progress >= 100 ? <CheckCircle className="w-5 h-5" /> : <div className="w-5 h-5 border-2 border-current rounded-full animate-pulse" />}
+                  <span className="text-xs">Completar</span>
+                </div>
               </div>
 
               {/* Real-time Progress Indicator */}

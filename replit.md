@@ -174,11 +174,16 @@ Changelog:
   - Configuration saving/loading mechanism ❌ (backend not properly using stored values)
 - **Implementation**: ⚠️ INCOMPLETE - UI exists but backend ignores the settings
 
-### 3. Fix API Data Loading from Environment
-- **Issue**: Default API data not loading from .env file into admin panel
-- **Impact**: Users must manually enter credentials even when already in .env
-- **Required**: Auto-populate fields from environment variables on load
-- **Related**: Connection test button not working properly
+### 3. Fix API Data Loading from Environment ⚠️ USABILITY ISSUES
+- **Issue**: Poor user experience with credential display and configuration
+- **Problems**:
+  - Shows placeholder "••••••••" values to users while actual values displayed in separate diagnostic block
+  - Hardcoded 60-minute timeout still present (not using configured timeWindowMinutes)
+  - Confusing dual display of stored vs environment values
+  - Users see "unknown values" in main fields but actual values in debug section
+- **Impact**: Terrible usability, users confused about what values are actually being used
+- **Required**: Single, clear display showing actual values being used by the system
+- **Status**: DEFERRED - needs complete redesign of credential display system
 
 ### 4. Fix Progress Indicators During Analysis
 - **Issue**: Crawling takes too long without proper progress feedback
