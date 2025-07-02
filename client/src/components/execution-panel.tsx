@@ -129,6 +129,102 @@ export function ExecutionPanel() {
 
   const analysisToShow = currentAnalysis || latestAnalysis;
 
+  // Export report as JSON
+  const handleExportReport = (analysis: AnalysisResult) => {
+    if (!analysis?.report) {
+      toast({
+        title: "Error",
+        description: "No hay informe disponible para exportar",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const exportData = {
+      id: analysis.id,
+      timestamp: analysis.completedAt || analysis.startedAt,
+      report: analysis.report,
+      metadata: {
+        messagesCollected: analysis.messagesCollected,
+        channelsProcessed: analysis.channelsProcessed,
+        exportedAt: new Date().toISOString()
+      }
+    };
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `telegram-intelligence-report-${analysis.id}-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "Exportado exitosamente",
+      description: "El informe se ha descargado como archivo JSON",
+    });
+  };
+
+  // Share report (copy to clipboard)
+  const handleShareReport = async (analysis: AnalysisResult) => {
+    if (!analysis?.report) {
+      toast({
+        title: "Error",
+        description: "No hay informe disponible para compartir",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    let shareText = `🔍 INFORME DE INTELIGENCIA TELEGRAM\n`;
+    shareText += `📅 ${new Date(analysis.completedAt || analysis.startedAt).toLocaleString()}\n\n`;
+    
+    if (analysis.report.topics?.length > 0) {
+      shareText += `📋 TEMAS PRINCIPALES:\n\n`;
+      analysis.report.topics.forEach((topic: any, index: number) => {
+        shareText += `${index + 1}. ${topic.topic}\n`;
+        shareText += `${topic.briefing}\n`;
+        if (topic.keyPoints?.length > 0) {
+          topic.keyPoints.forEach((point: string) => {
+            shareText += `   • ${point}\n`;
+          });
+        }
+        shareText += `\n`;
+      });
+    }
+
+    if (analysis.report.metadata) {
+      shareText += `📊 ESTADÍSTICAS:\n`;
+      shareText += `• Mensajes analizados: ${analysis.report.metadata.totalMessages}\n`;
+      shareText += `• Canales: ${analysis.report.metadata.channelsAnalyzed}\n`;
+      shareText += `• Ventana temporal: ${analysis.report.metadata.timeRange}\n`;
+      shareText += `• Tiempo de procesamiento: ${analysis.report.metadata.processingTime}\n`;
+    }
+
+    try {
+      await navigator.clipboard.writeText(shareText);
+      toast({
+        title: "Copiado al portapapeles",
+        description: "El informe está listo para compartir",
+      });
+    } catch (error) {
+      // Fallback for browsers that don't support clipboard API
+      const textArea = document.createElement('textarea');
+      textArea.value = shareText;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      
+      toast({
+        title: "Copiado al portapapeles",
+        description: "El informe está listo para compartir",
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Execution Control Card */}
