@@ -19,6 +19,7 @@ export function AdminPanel() {
   const [channels, setChannels] = useState("");
   const [promptTemplate, setPromptTemplate] = useState("");
   const [timeWindowMinutes, setTimeWindowMinutes] = useState(60);
+  const [showActualValues, setShowActualValues] = useState(false);
 
   // Get current configuration
   const { data: configuration } = useQuery<{
@@ -48,20 +49,31 @@ export function AdminPanel() {
     enabled: !configuration, // Only fetch when no configuration exists
   });
 
+  // Get debug info to show actual stored values
+  const { data: debugConfig } = useQuery<{
+    telegramApiId: string;
+    telegramApiHash: string;
+    telegramPhone: string;
+    openaiApiKey: string;
+    channels: string[];
+    promptTemplate: string;
+    timeWindowMinutes: number | string;
+    hasEnvVars: boolean;
+    envValues: {
+      telegramApiId: string;
+      telegramApiHash: string;
+      telegramPhone: string;
+      openaiApiKey: string;
+    };
+  }>({
+    queryKey: ["/api/configuration/debug"],
+    enabled: showActualValues,
+  });
+
   // Test API connections
   const testConnectionMutation = useMutation({
-    mutationFn: async ({ telegramApiId, telegramApiHash, telegramPhone, openaiApiKey }: { 
-      telegramApiId: string; 
-      telegramApiHash: string; 
-      telegramPhone: string; 
-      openaiApiKey: string; 
-    }) => {
-      const response = await apiRequest("POST", "/api/configuration/test", {
-        telegramApiId,
-        telegramApiHash,
-        telegramPhone,
-        openaiApiKey,
-      });
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/configuration/test", {});
       return response.json();
     },
     onSuccess: (data) => {
@@ -126,21 +138,8 @@ export function AdminPanel() {
   });
 
   const handleTestConnection = () => {
-    if (!telegramApiId || !telegramApiHash || !telegramPhone || !openaiApiKey) {
-      toast({
-        title: "Datos incompletos",
-        description: "Por favor completa todas las credenciales.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    testConnectionMutation.mutate({
-      telegramApiId,
-      telegramApiHash,
-      telegramPhone,
-      openaiApiKey,
-    });
+    // Test using stored configuration (backend will handle getting the right values)
+    testConnectionMutation.mutate();
   };
 
   const handleSaveConfiguration = () => {
@@ -348,20 +347,67 @@ export function AdminPanel() {
         </Card>
       </div>
 
-      {/* Test Connection Button */}
-      <div className="flex justify-center">
-        <Button
-          onClick={handleTestConnection}
-          disabled={testConnectionMutation.isPending}
-          className="min-w-[200px]"
-        >
-          {testConnectionMutation.isPending ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <CheckCircle className="mr-2 h-4 w-4" />
-          )}
-          Probar Conexión
-        </Button>
+      {/* Test Connection and Debug Section */}
+      <div className="space-y-4">
+        <div className="flex justify-center gap-4">
+          <Button
+            onClick={handleTestConnection}
+            disabled={testConnectionMutation.isPending}
+            className="min-w-[200px]"
+          >
+            {testConnectionMutation.isPending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <CheckCircle className="mr-2 h-4 w-4" />
+            )}
+            Probar Conexión
+          </Button>
+          
+          <Button
+            onClick={() => setShowActualValues(!showActualValues)}
+            variant="outline"
+            className="min-w-[200px]"
+          >
+            <Info className="mr-2 h-4 w-4" />
+            {showActualValues ? "Ocultar" : "Ver"} Valores Actuales
+          </Button>
+        </div>
+
+        {/* Debug Information */}
+        {showActualValues && debugConfig && (
+          <Card>
+            <CardContent className="pt-6">
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900">Diagnóstico de Configuración</h3>
+                
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <h4 className="font-medium text-gray-700 mb-2">Valores Almacenados</h4>
+                    <div className="space-y-1 text-sm">
+                      <p><strong>Telegram API ID:</strong> {debugConfig.telegramApiId}</p>
+                      <p><strong>Telegram API Hash:</strong> {debugConfig.telegramApiHash}</p>
+                      <p><strong>Telegram Phone:</strong> {debugConfig.telegramPhone}</p>
+                      <p><strong>OpenAI API Key:</strong> {debugConfig.openaiApiKey}</p>
+                      <p><strong>Time Window:</strong> {debugConfig.timeWindowMinutes} minutos</p>
+                      <p><strong>Canales:</strong> {Array.isArray(debugConfig.channels) ? debugConfig.channels.join(", ") : "No definidos"}</p>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h4 className="font-medium text-gray-700 mb-2">Variables de Entorno</h4>
+                    <div className="space-y-1 text-sm">
+                      <p><strong>Disponibles:</strong> {debugConfig.hasEnvVars ? "✓ Sí" : "✗ No"}</p>
+                      <p><strong>Telegram API ID:</strong> {debugConfig.envValues.telegramApiId}</p>
+                      <p><strong>Telegram API Hash:</strong> {debugConfig.envValues.telegramApiHash}</p>
+                      <p><strong>Telegram Phone:</strong> {debugConfig.envValues.telegramPhone}</p>
+                      <p><strong>OpenAI API Key:</strong> {debugConfig.envValues.openaiApiKey}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Channels Configuration */}

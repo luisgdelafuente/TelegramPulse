@@ -82,6 +82,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get actual stored configuration values for debugging (admin only)
+  app.get("/api/configuration/debug", async (req, res) => {
+    try {
+      const config = await storage.getConfiguration();
+      
+      if (!config) {
+        return res.status(404).json({ message: "No configuration found" });
+      }
+      
+      // Show actual values for debugging (truncated for security)
+      res.json({
+        telegramApiId: config.telegramApiId ? `${config.telegramApiId.substring(0, 4)}...${config.telegramApiId.slice(-4)}` : "Not set",
+        telegramApiHash: config.telegramApiHash ? `${config.telegramApiHash.substring(0, 8)}...${config.telegramApiHash.slice(-8)}` : "Not set",
+        telegramPhone: config.telegramPhone || "Not set",
+        openaiApiKey: config.openaiApiKey ? `${config.openaiApiKey.substring(0, 8)}...${config.openaiApiKey.slice(-8)}` : "Not set",
+        channels: config.channels,
+        promptTemplate: config.promptTemplate?.substring(0, 100) + "..." || "Not set",
+        timeWindowMinutes: config.timeWindowMinutes || "Not set",
+        hasEnvVars: !!(process.env.TELEGRAM_API_ID && process.env.TELEGRAM_API_HASH && process.env.TELEGRAM_PHONE && process.env.OPENAI_API_KEY),
+        envValues: {
+          telegramApiId: process.env.TELEGRAM_API_ID ? `${process.env.TELEGRAM_API_ID.substring(0, 4)}...${process.env.TELEGRAM_API_ID.slice(-4)}` : "Not set",
+          telegramApiHash: process.env.TELEGRAM_API_HASH ? `${process.env.TELEGRAM_API_HASH.substring(0, 8)}...${process.env.TELEGRAM_API_HASH.slice(-8)}` : "Not set",
+          telegramPhone: process.env.TELEGRAM_PHONE || "Not set",
+          openaiApiKey: process.env.OPENAI_API_KEY ? `${process.env.OPENAI_API_KEY.substring(0, 8)}...${process.env.OPENAI_API_KEY.slice(-8)}` : "Not set"
+        }
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get debug configuration" });
+    }
+  });
+
   // Create or update configuration
   app.post("/api/configuration", async (req, res) => {
     try {
@@ -123,30 +154,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Test API connections
+  // Test API connections using stored configuration
   app.post("/api/configuration/test", async (req, res) => {
     try {
-      const { telegramApiId, telegramApiHash, telegramPhone, openaiApiKey } = req.body;
+      const config = await storage.getConfiguration();
       
-      if (!telegramApiId || !telegramApiHash || !telegramPhone || !openaiApiKey) {
-        return res.status(400).json({ message: "All credentials are required (Telegram API ID, Hash, Phone and OpenAI API Key)" });
+      if (!config || !config.telegramApiId || !config.telegramApiHash || !config.telegramPhone || !config.openaiApiKey) {
+        return res.status(400).json({ 
+          message: "No configuration found. Please save your API credentials first.",
+          telegram: false,
+          openai: false,
+          success: false
+        });
       }
       
-      const telegramService = new TelegramService(telegramApiId, telegramApiHash, telegramPhone);
-      const openaiService = new OpenAIService(openaiApiKey);
+      console.log("Testing connections with stored configuration...");
+      
+      const telegramService = new TelegramService(config.telegramApiId, config.telegramApiHash, config.telegramPhone);
+      const openaiService = new OpenAIService(config.openaiApiKey);
       
       const [telegramTest, openaiTest] = await Promise.all([
-        telegramService.testConnection(),
-        openaiService.testConnection(),
+        telegramService.testConnection().catch(err => {
+          console.error("Telegram test failed:", err);
+          return false;
+        }),
+        openaiService.testConnection().catch(err => {
+          console.error("OpenAI test failed:", err);
+          return false;
+        }),
       ]);
+      
+      console.log("Test results:", { telegram: telegramTest, openai: openaiTest });
       
       res.json({
         telegram: telegramTest,
         openai: openaiTest,
         success: telegramTest && openaiTest,
+        message: telegramTest && openaiTest ? "All connections successful" : "Some connections failed"
       });
     } catch (error) {
-      res.status(500).json({ message: "Failed to test API connections" });
+      console.error("Test connection error:", error);
+      res.status(500).json({ 
+        message: "Failed to test API connections",
+        telegram: false,
+        openai: false,
+        success: false
+      });
     }
   });
 
