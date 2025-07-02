@@ -19,14 +19,15 @@ export function AdminPanel() {
   const [channels, setChannels] = useState("");
   const [promptTemplate, setPromptTemplate] = useState("");
   const [timeWindowMinutes, setTimeWindowMinutes] = useState(60);
-  const [showActualValues, setShowActualValues] = useState(false);
-
-  // Get current configuration
+  // Get current configuration with actual values
   const { data: configuration } = useQuery<{
     id: number;
+    telegramApiId: string;
+    telegramApiHash: string;
+    telegramPhone: string;
+    openaiApiKey: string;
     channels: string[];
     hasApiKeys: boolean;
-    hasEnvVars?: boolean;
     promptTemplate?: string;
     timeWindowMinutes?: number;
     createdAt?: string;
@@ -47,27 +48,6 @@ export function AdminPanel() {
   }>({
     queryKey: ["/api/configuration/env"],
     enabled: !configuration, // Only fetch when no configuration exists
-  });
-
-  // Get debug info to show actual stored values
-  const { data: debugConfig } = useQuery<{
-    telegramApiId: string;
-    telegramApiHash: string;
-    telegramPhone: string;
-    openaiApiKey: string;
-    channels: string[];
-    promptTemplate: string;
-    timeWindowMinutes: number | string;
-    hasEnvVars: boolean;
-    envValues: {
-      telegramApiId: string;
-      telegramApiHash: string;
-      telegramPhone: string;
-      openaiApiKey: string;
-    };
-  }>({
-    queryKey: ["/api/configuration/debug"],
-    enabled: showActualValues,
   });
 
   // Test API connections
@@ -143,10 +123,8 @@ export function AdminPanel() {
   };
 
   const handleSaveConfiguration = () => {
-    // Check if we're using placeholder values (already configured)
-    const isPlaceholder = telegramApiId === "••••••••";
-    
-    if (!isPlaceholder && (!telegramApiId || !telegramApiHash || !telegramPhone || !openaiApiKey)) {
+    // Validate required fields
+    if (!telegramApiId || !telegramApiHash || !telegramPhone || !openaiApiKey) {
       toast({
         title: "Datos incompletos",
         description: "Por favor completa todas las credenciales.",
@@ -169,54 +147,33 @@ export function AdminPanel() {
       return;
     }
 
-    // If placeholder values, only update channels and settings
-    if (isPlaceholder) {
-      saveConfigMutation.mutate({
-        telegramApiId: "",  // Backend will keep existing values
-        telegramApiHash: "",
-        telegramPhone: "",
-        openaiApiKey: "",
-        channels: channelList,
-        promptTemplate,
-        timeWindowMinutes,
-      });
-    } else {
-      saveConfigMutation.mutate({
-        telegramApiId,
-        telegramApiHash,
-        telegramPhone,
-        openaiApiKey,
-        channels: channelList,
-        promptTemplate,
-        timeWindowMinutes,
-      });
-    }
+    // Save all configuration values
+    saveConfigMutation.mutate({
+      telegramApiId,
+      telegramApiHash,
+      telegramPhone,
+      openaiApiKey,
+      channels: channelList,
+      promptTemplate,
+      timeWindowMinutes,
+    });
   };
 
-  // Populate form with existing configuration or environment variables
+  // Populate form with actual stored values (no placeholders)
   React.useEffect(() => {
     if (configuration) {
-      // Load existing configuration
-      if (configuration.channels) {
-        setChannels(configuration.channels.join("\n"));
-      }
-      if (configuration.promptTemplate) {
-        setPromptTemplate(configuration.promptTemplate);
-      } else {
-        setPromptTemplate("Analyze the following Telegram messages and generate a concise intelligence report. Focus on key topics, events, and significant developments. Provide clear, factual briefings without sentiment analysis.");
-      }
-      if (configuration.timeWindowMinutes) {
-        setTimeWindowMinutes(configuration.timeWindowMinutes);
-      }
-      // Show placeholder text when API keys are already configured
-      if (configuration.hasApiKeys) {
-        setTelegramApiId("••••••••");
-        setTelegramApiHash("••••••••");
-        setTelegramPhone("••••••••");
-        setOpenaiApiKey("••••••••");
-      }
-    } else if (envConfig) {
-      // Auto-populate from environment variables when no configuration exists
+      // Load stored configuration and show actual values
+      setTelegramApiId(configuration.telegramApiId || "");
+      setTelegramApiHash(configuration.telegramApiHash || "");
+      setTelegramPhone(configuration.telegramPhone || "");
+      setOpenaiApiKey(configuration.openaiApiKey || "");
+      setChannels(configuration.channels ? configuration.channels.join("\n") : "");
+      setPromptTemplate(configuration.promptTemplate || "Analyze the following Telegram messages and generate a concise report finding the main topics of discussion and writing a short briefing for each one, no bullets or lists.");
+      setTimeWindowMinutes(configuration.timeWindowMinutes || 60);
+    }
+    
+    // Only use environment variables if no configuration exists at all
+    if (!configuration && envConfig) {
       setTelegramApiId(envConfig.telegramApiId);
       setTelegramApiHash(envConfig.telegramApiHash);
       setTelegramPhone(envConfig.telegramPhone);
@@ -363,51 +320,7 @@ export function AdminPanel() {
             Probar Conexión
           </Button>
           
-          <Button
-            onClick={() => setShowActualValues(!showActualValues)}
-            variant="outline"
-            className="min-w-[200px]"
-          >
-            <Info className="mr-2 h-4 w-4" />
-            {showActualValues ? "Ocultar" : "Ver"} Valores Actuales
-          </Button>
         </div>
-
-        {/* Debug Information */}
-        {showActualValues && debugConfig && (
-          <Card>
-            <CardContent className="pt-6">
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900">Diagnóstico de Configuración</h3>
-                
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div>
-                    <h4 className="font-medium text-gray-700 mb-2">Valores Almacenados</h4>
-                    <div className="space-y-1 text-sm">
-                      <p><strong>Telegram API ID:</strong> {debugConfig.telegramApiId}</p>
-                      <p><strong>Telegram API Hash:</strong> {debugConfig.telegramApiHash}</p>
-                      <p><strong>Telegram Phone:</strong> {debugConfig.telegramPhone}</p>
-                      <p><strong>OpenAI API Key:</strong> {debugConfig.openaiApiKey}</p>
-                      <p><strong>Time Window:</strong> {debugConfig.timeWindowMinutes} minutos</p>
-                      <p><strong>Canales:</strong> {Array.isArray(debugConfig.channels) ? debugConfig.channels.join(", ") : "No definidos"}</p>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h4 className="font-medium text-gray-700 mb-2">Variables de Entorno</h4>
-                    <div className="space-y-1 text-sm">
-                      <p><strong>Disponibles:</strong> {debugConfig.hasEnvVars ? "✓ Sí" : "✗ No"}</p>
-                      <p><strong>Telegram API ID:</strong> {debugConfig.envValues.telegramApiId}</p>
-                      <p><strong>Telegram API Hash:</strong> {debugConfig.envValues.telegramApiHash}</p>
-                      <p><strong>Telegram Phone:</strong> {debugConfig.envValues.telegramPhone}</p>
-                      <p><strong>OpenAI API Key:</strong> {debugConfig.envValues.openaiApiKey}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
       </div>
 
       {/* Channels Configuration */}

@@ -24,6 +24,7 @@ interface Configuration {
   id: number;
   channels: string[];
   hasApiKeys: boolean;
+  timeWindowMinutes?: number;
 }
 
 export function ExecutionPanel() {
@@ -253,9 +254,9 @@ export function ExecutionPanel() {
             <div className="mt-2 text-sm text-blue-600">
               {configuration?.hasApiKeys ? (
                 <>
-                  <div>✓ Credenciales API cargadas desde variables de entorno</div>
+                  <div>✓ Credenciales API configuradas correctamente</div>
                   <div>✓ Canales: {configuration.channels.join(", ")}</div>
-                  <div>✓ Ventana temporal: 60 minutos</div>
+                  <div>✓ Ventana temporal: {configuration.timeWindowMinutes || 60} minutos</div>
                 </>
               ) : (
                 <div>Configura las credenciales de Telegram y OpenAI en el panel de administración</div>

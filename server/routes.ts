@@ -21,7 +21,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           telegramPhone: process.env.TELEGRAM_PHONE,
           openaiApiKey: process.env.OPENAI_API_KEY,
           channels: ["@Slavyangrad", "@TheIslanderNews"],
-          promptTemplate: "Analyze the following Telegram messages and generate a concise intelligence report. Focus on key topics, events, and significant developments. Provide clear, factual briefings without sentiment analysis.",
+          promptTemplate: "Analyze the following Telegram messages and generate a concise report finding the main topics of discussion and writing a short briefing for each one, no bullets or lists.",
           timeWindowMinutes: 60,
         });
       }
@@ -30,23 +30,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json(null);
       }
       
-      // Check if environment variables are available and can populate fields
-      const hasEnvVars = !!(process.env.TELEGRAM_API_ID && process.env.TELEGRAM_API_HASH && 
-                           process.env.TELEGRAM_PHONE && process.env.OPENAI_API_KEY);
-      
-      // Don't expose API keys in the response, but indicate if env vars are available
-      const safeConfig = {
+      // Return full configuration for admin panel (including actual API keys)
+      res.json({
         id: config.id,
+        telegramApiId: config.telegramApiId,
+        telegramApiHash: config.telegramApiHash,
+        telegramPhone: config.telegramPhone,
+        openaiApiKey: config.openaiApiKey,
         channels: config.channels,
         hasApiKeys: !!(config.telegramApiId && config.telegramApiHash && config.telegramPhone && config.openaiApiKey),
-        hasEnvVars: hasEnvVars,
         promptTemplate: config.promptTemplate,
         timeWindowMinutes: config.timeWindowMinutes,
         createdAt: config.createdAt,
         updatedAt: config.updatedAt,
-      };
-      
-      res.json(safeConfig);
+      });
     } catch (error) {
       res.status(500).json({ message: "Failed to get configuration" });
     }

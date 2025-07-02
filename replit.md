@@ -156,6 +156,7 @@ Changelog:
 - July 02, 2025. TASK 1 COMPLETED: App organization into Admin and Home sections with navigation
 - July 02, 2025. TASK 2 PARTIAL: Admin panel enhanced with prompt template and time window fields, but configuration not fully working
 - July 02, 2025. TASK 7 COMPLETED: OpenAI prompt now exclusively comes from admin panel, removed hardcoded prompts, eliminated bullet points and timestamps from reports
+- July 02, 2025. TASKS 2-3 COMPLETED: Combined admin panel enhancements with API data loading fixes, admin panel now shows actual values and persists configuration properly
 ```
 
 ## Pending Tasks for First Phase Completion
@@ -167,24 +168,17 @@ Changelog:
   - **Home**: Report generation and viewing ✓
 - **Implementation**: ~~Add navigation between sections~~ Navigation component created ✓
 
-### 2. Admin Panel Enhancements ⚠️ NOT WORKING
-- **Current**: Fields added but configuration not being used by system
-- **Required**: Fix actual usage of configured settings:
-  - OpenAI prompt template for report generation ❌ (hardcoded prompt still used)
-  - Time window parameter ❌ (system ignores configured value)
-  - Configuration saving/loading mechanism ❌ (backend not properly using stored values)
-- **Implementation**: ⚠️ INCOMPLETE - UI exists but backend ignores the settings
-
-### 3. Fix API Data Loading from Environment ⚠️ USABILITY ISSUES
-- **Issue**: Poor user experience with credential display and configuration
-- **Problems**:
-  - Shows placeholder "••••••••" values to users while actual values displayed in separate diagnostic block
-  - Hardcoded 60-minute timeout still present (not using configured timeWindowMinutes)
-  - Confusing dual display of stored vs environment values
-  - Users see "unknown values" in main fields but actual values in debug section
-- **Impact**: Terrible usability, users confused about what values are actually being used
-- **Required**: Single, clear display showing actual values being used by the system
-- **Status**: DEFERRED - needs complete redesign of credential display system
+### 2-3. Admin Panel Enhancements & Fix API Data Loading ✓ COMPLETED
+- **Issues Combined**: Poor user experience with credential display and backend not using stored configuration
+- **Problems Fixed**:
+  - Admin panel now shows actual stored values instead of placeholders ✓
+  - Configuration values persist when revisiting admin panel ✓
+  - Backend uses stored prompt template and time window parameters ✓
+  - Home page displays actual configured time window ✓
+  - Removed confusing dual display system ✓
+  - Single, clear display of values being used by system ✓
+- **Implementation**: Modified backend to return actual values, updated admin panel to show real stored data, eliminated placeholder system
+- **Status**: ✓ COMPLETED - Admin panel fully functional with proper persistence and usage
 
 ### 4. Fix Progress Indicators During Analysis ✓ COMPLETED
 - **Issue**: ~~Crawling takes too long without proper progress feedback~~ FIXED
