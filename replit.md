@@ -116,18 +116,13 @@ This is a full-stack web application that aggregates and analyzes public Telegra
 3. **Clear Error Handling**: System now detects missing authentication and provides setup instructions
 4. **Automated Script**: Added `setup_telegram_auth.sh` for streamlined authentication process
 
-### Current Status - FULLY OPERATIONAL & OPTIMIZED
-- Complete end-to-end functionality confirmed working
+### Current Status - PENDING BUG FIXES AND OPTIMIZATIONS
+- Basic end-to-end functionality achieved but requires fixes
 - Authentication system using MTProto session management with persistent sessions
-- Real-time data collection from multiple Telegram channels in single batch
-- OpenAI GPT-4o generating consolidated intelligence reports (1500 token limit for speed)
-- Web interface with enhanced UX:
-  - Visual API key status indicators (green when configured, yellow for first setup)
-  - Real-time progress indicators with estimated completion times
-  - Channels can be updated without re-entering API credentials
-- Frontend-backend API integration fully functional
-- Optimized report generation: all messages processed together, no per-channel analysis
-- 60-minute time window for message collection implemented system-wide
+- Data collection from multiple Telegram channels works but UI feedback issues
+- OpenAI GPT-4o generating reports but format needs adjustment
+- Web interface exists but needs reorganization and bug fixes
+- Several critical issues pending resolution (see Pending Tasks section)
 
 ## Changelog
 
@@ -156,7 +151,48 @@ Changelog:
 - June 30, 2025. OPTIMIZATION: Enhanced UX with clear visual feedback for API configuration status
 - July 01, 2025. VALIDATION: Confirmed system working with 4 messages from 2 channels processed successfully
 - July 01, 2025. DOCUMENTATION: Updated replit.md to reflect current optimized state and architectural improvements
+- July 02, 2025. STATUS UPDATE: Changed status to "pending bug fixes and optimizations" per user requirements
+- July 02, 2025. TASK DOCUMENTATION: Documented 6 pending tasks for first phase completion
 ```
+
+## Pending Tasks for First Phase Completion
+
+### 1. App Organization into Admin and Home Sections
+- **Current**: All functionality in single interface
+- **Required**: Split into 2 main sections:
+  - **Admin**: API configuration and settings management
+  - **Home**: Report generation and viewing
+- **Implementation**: Add navigation between sections
+
+### 2. Admin Panel Enhancements
+- **Current**: Only shows API keys and channels
+- **Required**: Add editable fields for:
+  - OpenAI prompt template for report generation
+  - Time window parameter (currently hardcoded to 1 hour)
+  - All parameters should be editable and saved
+- **Implementation**: Extend admin panel with new configuration fields
+
+### 3. Fix API Data Loading from Environment
+- **Issue**: Default API data not loading from .env file into admin panel
+- **Impact**: Users must manually enter credentials even when already in .env
+- **Required**: Auto-populate fields from environment variables on load
+- **Related**: Connection test button not working properly
+
+### 4. Fix Progress Indicators During Analysis
+- **Issue**: Crawling takes too long without proper progress feedback
+- **Symptoms**: Progress bars not updating, user must refresh to see results
+- **Required**: Real-time progress updates throughout entire process
+- **Implementation**: Fix WebSocket or polling mechanism for progress updates
+
+### 5. Remove "Eventos Temporales" Section from Reports
+- **Current**: Reports show both topics and temporal events sections
+- **Required**: Only show topics-based organization
+- **Implementation**: Modify report display component to exclude events
+
+### 6. Fix Non-Functional Export and Share Buttons
+- **Current**: Buttons displayed but not implemented
+- **Required**: Functional export (PDF/JSON) and share capabilities
+- **Implementation**: Add actual functionality to these buttons
 
 ## Recent Work Summary (June 30 - July 1, 2025)
 
