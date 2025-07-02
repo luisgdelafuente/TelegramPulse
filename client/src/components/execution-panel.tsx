@@ -377,18 +377,7 @@ export function ExecutionPanel() {
                       {analysisToShow.report.topics.map((topic: any, index: number) => (
                         <div key={index} className="bg-white border border-gray-200 rounded-lg p-4 mb-3">
                           <h5 className="font-semibold text-gray-800 mb-2">{topic.topic}</h5>
-                          <p className="text-gray-700 mb-2">{topic.briefing}</p>
-                          {topic.keyPoints && topic.keyPoints.length > 0 && (
-                            <ul className="list-disc list-inside text-sm text-gray-600 mb-2">
-                              {topic.keyPoints.map((point: string, pointIndex: number) => (
-                                <li key={pointIndex}>{point}</li>
-                              ))}
-                            </ul>
-                          )}
-                          <div className="text-xs text-gray-500">
-                            <span className="mr-3">⏱️ {topic.timeframe}</span>
-                            <span>📊 {topic.sources} fuentes</span>
-                          </div>
+                          <p className="text-gray-700">{topic.briefing}</p>
                         </div>
                       ))}
                     </div>

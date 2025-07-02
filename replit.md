@@ -155,6 +155,7 @@ Changelog:
 - July 02, 2025. TASK DOCUMENTATION: Documented 6 pending tasks for first phase completion
 - July 02, 2025. TASK 1 COMPLETED: App organization into Admin and Home sections with navigation
 - July 02, 2025. TASK 2 PARTIAL: Admin panel enhanced with prompt template and time window fields, but configuration not fully working
+- July 02, 2025. TASK 7 COMPLETED: OpenAI prompt now exclusively comes from admin panel, removed hardcoded prompts, eliminated bullet points and timestamps from reports
 ```
 
 ## Pending Tasks for First Phase Completion
@@ -209,6 +210,17 @@ Changelog:
   - Both include proper error handling and success notifications
   - Export includes metadata (messages collected, channels processed, export timestamp)
 - **Status**: WORKING - Both export and share functionality operational
+
+### 7. Ensure OpenAI Prompt Comes Exclusively from Admin Panel ✓ COMPLETED
+- **Issue**: Hardcoded prompts in OpenAI service ignoring admin panel configuration, AI generating bullet points despite "no bullets" instruction, unwanted timestamps and "fuentes" icons
+- **Problems Fixed**:
+  - Removed all hardcoded prompts from OpenAI service ✓
+  - System now uses ONLY admin panel prompt template ✓
+  - Enhanced JSON format instruction to prevent bullet points ✓
+  - Removed keyPoints display from frontend ✓
+  - Removed timestamps and "fuentes" icons from topic display ✓
+- **Implementation**: Modified OpenAI service to require admin panel prompt, simplified topic display to show only title and briefing
+- **Status**: WORKING - Reports now use only admin panel prompt and display clean topic briefings without bullets or metadata
 
 ## Recent Work Summary (June 30 - July 1, 2025)
 

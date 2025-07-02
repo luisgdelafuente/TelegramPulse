@@ -37,8 +37,12 @@ export class OpenAIService {
 
     const startTime = Date.now();
     
-    // Use configured prompt template or default
-    const systemPrompt = promptTemplate || "Analyze the following Telegram messages and generate a concise intelligence report. Focus on key topics, events, and significant developments. Provide clear, factual briefings without sentiment analysis.";
+    // Use ONLY the configured prompt template from admin panel
+    if (!promptTemplate) {
+      throw new Error("No prompt template configured. Please set up the prompt in the admin panel.");
+    }
+    
+    const systemPrompt = promptTemplate;
     const timeWindow = timeWindowMinutes || 60;
     
     // Create consolidated text batch
@@ -51,7 +55,20 @@ export class OpenAIService {
         messages: [
           {
             role: "system",
-            content: `${systemPrompt} Return JSON format with topics and events arrays.`
+            content: `${systemPrompt}
+
+Return your response in this exact JSON format:
+{
+  "topics": [{
+    "topic": "topic name",
+    "briefing": "briefing text without any bullet points or lists"
+  }],
+  "metadata": {
+    "totalMessages": ${messages.length},
+    "channelsAnalyzed": ${new Set(messages.map(m => m.channel)).size},
+    "processingTime": "will be calculated"
+  }
+}`
           },
           {
             role: "user",
@@ -69,8 +86,14 @@ export class OpenAIService {
       
       // Structure the response according to our interface
       const report: IntelligenceReport = {
-        topics: analysisResult.topics || [],
-        events: analysisResult.events || [],
+        topics: (analysisResult.topics || []).map((topic: any) => ({
+          topic: topic.topic || "",
+          briefing: topic.briefing || "",
+          keyPoints: [], // Remove keyPoints as we don't want bullet points
+          timeframe: "", // Remove timeframe as user doesn't want timestamps
+          sources: "" // Remove sources as user doesn't want "fuentes" icons
+        })),
+        events: [], // Remove events section entirely
         metadata: {
           totalMessages: messages.length,
           channelsAnalyzed: new Set(messages.map(m => m.channel)).size,
@@ -91,30 +114,15 @@ export class OpenAIService {
     // Sort messages by timestamp
     const sortedMessages = [...messages].sort((a, b) => a.date - b.date);
     
-    let consolidatedText = `Analyze the following ${messages.length} messages from the last ${timeWindowMinutes} minutes. Find the most global and relevant topics and create a small briefing for each one.
+    // Only provide the raw messages, no hardcoded instructions
+    let consolidatedText = `Messages from ${messages.length} channels in the last ${timeWindowMinutes} minutes:
 
-JSON format:
-{
-  "topics": [{
-    "topic": "topic name",
-    "briefing": "concise summary of what's happening",
-    "keyPoints": ["key point 1", "key point 2"],
-    "timeframe": "when this occurred"
-  }],
-  "events": [{
-    "time": "HH:MM",
-    "event": "what happened",
-    "details": "brief details"
-  }]
-}
-
-Messages:
 `;
 
     sortedMessages.forEach((msg, index) => {
       const date = new Date(msg.date * 1000);
       const timeStr = date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-      consolidatedText += `\n${index + 1}. [${timeStr}] ${msg.text.substring(0, 300)}${msg.text.length > 300 ? '...' : ''}`;
+      consolidatedText += `${index + 1}. [${timeStr}] ${msg.text.substring(0, 300)}${msg.text.length > 300 ? '...' : ''}\n`;
     });
 
     return consolidatedText;
