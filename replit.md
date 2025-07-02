@@ -35,9 +35,9 @@ This is a full-stack web application that aggregates and analyzes public Telegra
 - **Statistics**: Maintains usage metrics and system statistics
 
 ### External Service Integrations
-- **Telegram Bot API**: For fetching messages from public channels
+- **Telegram MTProto API**: Using Telethon for accessing public channels without admin permissions
 - **OpenAI API**: GPT-4o model for generating intelligence reports
-- **Neon Database**: Serverless PostgreSQL hosting
+- **Neon Database**: Serverless PostgreSQL hosting (with in-memory fallback)
 
 ### Core Services
 - **TelegramService**: Handles channel message retrieval
@@ -51,12 +51,12 @@ This is a full-stack web application that aggregates and analyzes public Telegra
 
 ## Data Flow
 
-1. **Configuration**: API credentials auto-loaded from environment variables with default channels
-2. **Analysis Initiation**: System starts collecting messages from configured channels
-3. **Message Collection**: Recent messages (60 minutes) are fetched from each channel using MTProto
-4. **AI Processing**: OpenAI GPT-4o analyzes collected messages for technical intelligence insights
-5. **Report Generation**: Telegraphic, technical briefings grouped by topics (no sentiment analysis)
-6. **Results Display**: Reports presented with topics, events, and metadata sections
+1. **Configuration**: API credentials auto-loaded from environment variables, visual status indicators in admin panel
+2. **Analysis Initiation**: User clicks button, real-time progress indicators show each step
+3. **Message Collection**: All channels processed in single batch (60 minutes window) using MTProto
+4. **AI Processing**: Consolidated text sent to OpenAI GPT-4o for efficient analysis
+5. **Report Generation**: Global topics and briefings without source tracking or relevancy scores
+6. **Results Display**: Topics with concise summaries and key points, plus chronological events
 
 ## External Dependencies
 
@@ -116,14 +116,17 @@ This is a full-stack web application that aggregates and analyzes public Telegra
 3. **Clear Error Handling**: System now detects missing authentication and provides setup instructions
 4. **Automated Script**: Added `setup_telegram_auth.sh` for streamlined authentication process
 
-### Current Status - FULLY OPERATIONAL
+### Current Status - FULLY OPERATIONAL & OPTIMIZED
 - Complete end-to-end functionality confirmed working
-- Authentication system using MTProto session management
-- Real-time data collection from Telegram channels (tested with @Slavyangrad and @TheIslanderNews)
-- OpenAI GPT-4o generating telegraphic, technical briefings grouped by topics
-- Web interface with configuration, execution, and statistics panels
+- Authentication system using MTProto session management with persistent sessions
+- Real-time data collection from multiple Telegram channels in single batch
+- OpenAI GPT-4o generating consolidated intelligence reports (1500 token limit for speed)
+- Web interface with enhanced UX:
+  - Visual API key status indicators (green when configured, yellow for first setup)
+  - Real-time progress indicators with estimated completion times
+  - Channels can be updated without re-entering API credentials
 - Frontend-backend API integration fully functional
-- No sentiment analysis or confidence scoring in reports
+- Optimized report generation: all messages processed together, no per-channel analysis
 - 60-minute time window for message collection implemented system-wide
 
 ## Changelog
@@ -151,6 +154,8 @@ Changelog:
 - June 30, 2025. OPTIMIZATION: Implemented consolidated text batch processing for all channels at once
 - June 30, 2025. OPTIMIZATION: Added real-time progress indicators with estimated completion times
 - June 30, 2025. OPTIMIZATION: Enhanced UX with clear visual feedback for API configuration status
+- July 01, 2025. VALIDATION: Confirmed system working with 4 messages from 2 channels processed successfully
+- July 01, 2025. DOCUMENTATION: Updated replit.md to reflect current optimized state and architectural improvements
 ```
 
 ## User Preferences

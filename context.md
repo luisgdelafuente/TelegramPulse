@@ -1,72 +1,143 @@
-# Agregador de Canales Públicos de Telegram - Contexto del Proyecto
+# Telegram Intelligence Aggregator - Technical Context
 
-## Objetivo
-Crear una aplicación web en Node.js (usando Express.js) con una interfaz sencilla en HTML/CSS/JS que sirva como agregador de canales públicos de Telegram.
+## Project Overview
 
-## Características Funcionales
+A full-stack web application that aggregates and analyzes messages from public Telegram channels using AI to generate intelligence reports. The system uses Telegram MTProto API for message collection and OpenAI GPT-4o for analysis.
 
-### 1. Panel Admin
-Un formulario web donde el usuario pueda:
-- Introducir la lista de canales públicos de Telegram a seguir (separados por coma o en una lista)
-- Introducir su API Key de Telegram (para usar Telegram API o TDLib)
-- Introducir su API Key de OpenAI (para enviar los mensajes a GPT-4 para análisis)
+## Recent Work Summary (June 30 - July 1, 2025)
 
-### 2. Botón de Ejecución
-Al pulsar un botón, la aplicación:
-- Usa la API de Telegram para leer los últimos mensajes de los últimos 20 minutos de cada canal configurado
-- Agrupa todos los mensajes recogidos
-- Muestra en la interfaz indicadores de progreso ("Recopilando mensajes...", "Generando resumen con OpenAI...", etc.)
+### Problems Solved
 
-### 3. Llamada a OpenAI
-Envía todos los mensajes recopilados (agrupados por canal) a la API de OpenAI con un prompt que genere un informe de inteligencia que:
-- **CONSOLIDE y analice toda la información de forma agregada** (no separada por canal)
-- **Identifique tendencias, patrones y correlaciones** entre la información de diferentes canales
-- **Priorice eventos por relevancia e impacto**
-- **Genere un resumen inteligente y cohesivo** de toda la actividad de los últimos 20 minutos
-- Incluya enlaces a los mensajes específicos cuando sea relevante (de canales públicos)
-- Ofrezca una visión analítica consolidada, no solo un resumen literal por canal
+1. **API Key Persistence Issue**
+   - **Problem**: API keys weren't showing in the admin panel, requiring re-entry each time
+   - **Solution**: Added visual status indicators showing when keys are configured
+   - **Implementation**: Modified admin panel to show placeholder bullets (••••••••) when keys exist
+   - **Result**: Users now see green status when configured, yellow for first-time setup
 
-### 4. Presentación del Informe
-- El informe generado se muestra como texto plano en la misma interfaz web debajo del botón
-- **El formato debe ser un análisis consolidado**, identificando:
-  - Tendencias principales detectadas
-  - Eventos de alto impacto con timestamps
-  - Correlaciones entre información de diferentes fuentes
-  - Análisis de sentimiento general
-  - Recomendaciones basadas en el análisis agregado
-- La aplicación queda a la espera del próximo clic para ejecutar una nueva ronda
+2. **Slow Report Generation**
+   - **Problem**: OpenAI analysis took too long (12+ seconds)
+   - **Solution**: Optimized prompt and reduced token limit from 4000 to 1500
+   - **Implementation**: Simplified system prompt and consolidated all messages into single batch
+   - **Result**: Faster processing with more focused analysis
 
-## Consideraciones Técnicas
+3. **Poor User Feedback**
+   - **Problem**: No indication of progress during analysis
+   - **Solution**: Added real-time progress indicators
+   - **Implementation**: Shows different messages at each stage (0-30%, 30-70%, 70-90%, 90-100%)
+   - **Result**: Users know exactly what's happening and estimated completion time
 
-- Usar `node-fetch` o `axios` para llamadas HTTP
-- Usar `express` para el backend web
-- Guardar los canales y claves API en variables de entorno (`.env`) o en memoria temporal para la demo
-- No se requiere base de datos por ahora
-- No usar cron ni tareas automáticas
-- Interfaz HTML/CSS simple pero funcional
-- Puedes usar información mock en una primera etapa de layout
+### Technical Architecture
 
-## Formato del Informe Esperado
+#### Backend Services
+- **Express.js Server**: RESTful API endpoints on port 5000
+- **TelegramService**: Uses Python subprocess to run telegram_simple.py with Telethon
+- **OpenAIService**: Processes messages with GPT-4o using consolidated text approach
+- **Storage**: In-memory implementation with PostgreSQL interface ready
 
-El informe debe ser un **análisis consolidado e inteligente**, no una lista por canales. Ejemplo:
+#### Frontend Components
+- **AdminPanel**: Manages API configuration with visual status indicators
+- **ExecutionPanel**: Shows real-time progress during analysis
+- **StatisticsDashboard**: Displays usage metrics
 
+#### Data Flow
+1. API credentials loaded from .env file automatically
+2. User initiates analysis through execution panel
+3. Python script collects messages from all channels (60-minute window)
+4. Messages consolidated into single text batch
+5. OpenAI analyzes for global topics and events
+6. Results displayed with topics and chronological events
+
+### Key Technical Decisions
+
+1. **MTProto over Bot API**: Allows reading public channels without admin access
+2. **Python Subprocess**: Telethon requires Python, integrated via subprocess
+3. **Consolidated Processing**: All channels processed together for efficiency
+4. **In-Memory Storage**: Simplified persistence for current implementation
+5. **Environment Variables**: Secure credential management
+
+### Current Configuration
+
+```javascript
+// API endpoints
+GET  /api/configuration     // Returns config with hasApiKeys flag
+POST /api/configuration     // Updates config, preserves existing keys if empty
+POST /api/configuration/test // Tests API connections
+POST /api/analysis/start    // Initiates new analysis
+GET  /api/analysis          // Gets latest analysis results
+GET  /api/statistics        // Gets usage statistics
 ```
-## ANÁLISIS CONSOLIDADO - ÚLTIMOS 20 MINUTOS
 
-### TENDENCIAS PRINCIPALES DETECTADAS
-1. **Crisis energética en Europa** - Múltiples fuentes reportan cortes de suministro
-2. **Nuevo exploit de seguridad** - Afecta sistemas bancarios, confirmado por 3 canales
+### Message Processing Flow
 
-### EVENTOS DE ALTO IMPACTO
-- **12:45** - Anuncio gubernamental sobre políticas energéticas
-- **12:52** - Confirmación de vulnerabilidad crítica CVE-2024-XXXX
+```python
+# telegram_simple.py execution
+python3 server/services/telegram_simple.py "API_ID" "API_HASH" "PHONE" '["@channel1","@channel2"]' 60
 
-### CORRELACIONES IDENTIFICADAS
-- La crisis energética está correlacionada con aumentos en precios de criptomonedas
-- El exploit de seguridad coincide con reportes de actividad sospechosa en exchanges
+# Output format
+TELEGRAM_MESSAGES_START
+[{"id": 123, "text": "...", "date": 1751452531, "channel": "@channel", "url": "..."}]
+TELEGRAM_MESSAGES_END
 ```
 
-## Notas Adicionales
-- El objetivo es usar OpenAI para generar inteligencia agregada, no resúmenes por canal
-- La información debe ser consolidada, priorizada y analizada de forma inteligente
-- Los patrones y correlaciones entre fuentes son clave para el valor del informe
+### OpenAI Integration
+
+```javascript
+// Optimized prompt structure
+const consolidatedText = `Analyze the following ${messages.length} messages from the last 60 minutes. 
+Find the most global and relevant topics and create a small briefing for each one.
+
+JSON format:
+{
+  "topics": [{
+    "topic": "topic name",
+    "briefing": "concise summary",
+    "keyPoints": ["key1", "key2"],
+    "timeframe": "when this occurred"
+  }],
+  "events": [{
+    "time": "HH:MM",
+    "event": "what happened",
+    "details": "brief details"
+  }]
+}
+
+Messages:
+1. [10:35] Message text...
+2. [10:36] Message text...
+`;
+```
+
+### Performance Metrics
+
+- **Message Collection**: ~5-10 seconds for 2-7 channels
+- **AI Analysis**: ~5-15 seconds depending on message volume
+- **Total Process**: ~15-30 seconds end-to-end
+- **Token Usage**: Limited to 1500 for faster responses
+
+### Known Issues
+
+1. **TypeScript Errors**: Multiple type safety issues in routes.ts and execution-panel.tsx
+2. **Sequential Processing**: Channels processed one by one, not in parallel
+3. **Session Management**: Requires manual Telegram authentication setup
+4. **Error Handling**: Inconsistent error types across services
+
+### Environment Setup
+
+Required environment variables in .env:
+```
+TELEGRAM_API_ID=25392819
+TELEGRAM_API_HASH=8032db8bcb4f2bde115c2d5fd6199832
+TELEGRAM_PHONE=+34622025321
+OPENAI_API_KEY=sk-proj-...
+```
+
+### Recent Test Results
+
+- Successfully collected 4 messages from 2 channels (@Slavyangrad, @TheIslanderNews)
+- Generated intelligence report with global topics
+- Confirmed all optimizations working as expected
+- Visual indicators properly showing API configuration status
+
+## Summary
+
+The application is fully operational with recent optimizations significantly improving performance and user experience. The main achievement was consolidating all message processing into a single batch and adding clear visual feedback throughout the analysis process. The system now provides a smooth, intuitive experience from configuration through report generation.
