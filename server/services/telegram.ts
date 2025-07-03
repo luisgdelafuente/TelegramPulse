@@ -21,6 +21,13 @@ export class TelegramService {
     try {
       console.log(`Using Telegram MTProto to get messages from ${channels.length} channels`);
       
+      // Limit channels to prevent timeouts and rate limits
+      const maxChannels = 20;
+      if (channels.length > maxChannels) {
+        console.warn(`Too many channels (${channels.length}). Processing first ${maxChannels} channels only.`);
+        channels = channels.slice(0, maxChannels);
+      }
+      
       // Execute Python script using Telethon
       const { exec } = await import('child_process');
       const { promisify } = await import('util');
@@ -30,13 +37,15 @@ export class TelegramService {
       const pythonCommand = `python3 server/services/telegram_simple.py "${this.apiId}" "${this.apiHash}" "${this.phone}" '${channelsJson}' ${minutesBack}`;
       
       console.log('Executing Telegram MTProto client...');
+      console.log(`Processing ${channels.length} channels with ${minutesBack} minutes lookback`);
       console.log('Command:', pythonCommand);
       
-      // Add timeout to prevent hanging
+      // Add timeout to prevent hanging - increased for large channel lists
+      const timeoutMs = Math.max(60000, channels.length * 10000); // 10 seconds per channel, minimum 60 seconds
       const { stdout, stderr } = await Promise.race([
         execAsync(pythonCommand),
         new Promise<never>((_, reject) => 
-          setTimeout(() => reject(new Error('Telegram script timeout after 60 seconds')), 60000)
+          setTimeout(() => reject(new Error(`Telegram script timeout after ${timeoutMs/1000} seconds`)), timeoutMs)
         )
       ]);
       

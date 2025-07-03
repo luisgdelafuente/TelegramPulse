@@ -340,6 +340,14 @@ export function AdminPanel() {
                 onChange={(e) => setChannels(e.target.value)}
                 rows={6}
               />
+              {channels.split('\n').filter(c => c.trim()).length > 20 && (
+                <Alert>
+                  <Info className="h-4 w-4" />
+                  <AlertDescription>
+                    Advertencia: Tienes más de 20 canales. El sistema procesará solo los primeros 20 para evitar timeouts.
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
           </div>
         </CardContent>
