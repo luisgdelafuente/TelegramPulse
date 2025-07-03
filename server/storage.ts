@@ -2,12 +2,15 @@ import {
   configurations, 
   analyses, 
   statistics,
+  users,
   type Configuration, 
   type InsertConfiguration,
   type Analysis,
   type InsertAnalysis,
   type Statistics,
-  type InsertStatistics
+  type InsertStatistics,
+  type User,
+  type InsertUser
 } from "@shared/schema";
 
 export interface IStorage {
@@ -26,23 +29,32 @@ export interface IStorage {
   // Statistics methods
   getStatistics(): Promise<Statistics | undefined>;
   updateStatistics(stats: Partial<InsertStatistics>): Promise<Statistics>;
+  
+  // User methods
+  getUserByUsername(username: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
+  updateUserLastLogin(id: number): Promise<User>;
 }
 
 export class MemStorage implements IStorage {
   private configurations: Map<number, Configuration>;
   private analyses: Map<number, Analysis>;
   private statistics: Map<number, Statistics>;
+  private users: Map<number, User>;
   private currentConfigId: number;
   private currentAnalysisId: number;
   private currentStatsId: number;
+  private currentUserId: number;
 
   constructor() {
     this.configurations = new Map();
     this.analyses = new Map();
     this.statistics = new Map();
+    this.users = new Map();
     this.currentConfigId = 1;
     this.currentAnalysisId = 1;
     this.currentStatsId = 1;
+    this.currentUserId = 1;
     
     // Initialize default statistics
     this.statistics.set(1, {
@@ -149,6 +161,37 @@ export class MemStorage implements IStorage {
       lastUpdate: new Date(),
     };
     this.statistics.set(1, updated);
+    return updated;
+  }
+
+  // User management methods
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(user => user.username === username);
+  }
+
+  async createUser(user: InsertUser): Promise<User> {
+    const id = this.currentUserId++;
+    const newUser: User = {
+      id,
+      ...user,
+      createdAt: new Date(),
+      lastLogin: null,
+    };
+    this.users.set(id, newUser);
+    return newUser;
+  }
+
+  async updateUserLastLogin(id: number): Promise<User> {
+    const user = this.users.get(id);
+    if (!user) {
+      throw new Error(`User with id ${id} not found`);
+    }
+    
+    const updated: User = {
+      ...user,
+      lastLogin: new Date(),
+    };
+    this.users.set(id, updated);
     return updated;
   }
 }

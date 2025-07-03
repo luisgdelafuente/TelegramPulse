@@ -1,14 +1,108 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertConfigurationSchema, insertAnalysisSchema } from "@shared/schema";
+import { insertConfigurationSchema, insertAnalysisSchema, loginSchema, insertUserSchema } from "@shared/schema";
 import { TelegramService } from "./services/telegram";
 import { OpenAIService } from "./services/openai";
+import bcrypt from "bcryptjs";
+
+// Middleware to check if user is authenticated
+function requireAuth(req: any, res: any, next: any) {
+  if (req.session?.userId) {
+    return next();
+  }
+  res.status(401).json({ error: "Authentication required" });
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
-  // Get current configuration
-  app.get("/api/configuration", async (req, res) => {
+  // Authentication routes
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const { username, password } = loginSchema.parse(req.body);
+      
+      const user = await storage.getUserByUsername(username);
+      if (!user || !bcrypt.compareSync(password, user.passwordHash)) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+      
+      // Update last login
+      await storage.updateUserLastLogin(user.id);
+      
+      // Set session
+      req.session.userId = user.id;
+      req.session.username = user.username;
+      
+      res.json({ 
+        success: true, 
+        user: { 
+          id: user.id, 
+          username: user.username, 
+          role: user.role 
+        } 
+      });
+    } catch (error) {
+      console.error("Login error:", error);
+      res.status(400).json({ error: "Invalid request" });
+    }
+  });
+
+  app.post("/api/auth/logout", (req, res) => {
+    req.session.destroy((err: any) => {
+      if (err) {
+        return res.status(500).json({ error: "Could not log out" });
+      }
+      res.json({ success: true });
+    });
+  });
+
+  app.get("/api/auth/me", async (req, res) => {
+    if (!req.session?.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    try {
+      const user = await storage.getUserByUsername(req.session.username);
+      if (!user) {
+        return res.status(401).json({ error: "User not found" });
+      }
+      
+      res.json({ 
+        id: user.id, 
+        username: user.username, 
+        role: user.role 
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Server error" });
+    }
+  });
+
+  app.post("/api/auth/setup", async (req, res) => {
+    try {
+      // Check if any users exist
+      const existingUser = await storage.getUserByUsername("admin");
+      if (existingUser) {
+        return res.status(400).json({ error: "Admin user already exists" });
+      }
+      
+      const { username, password } = loginSchema.parse(req.body);
+      const hashedPassword = bcrypt.hashSync(password, 10);
+      
+      const user = await storage.createUser({
+        username,
+        passwordHash: hashedPassword,
+        role: "admin"
+      });
+      
+      res.json({ success: true, message: "Admin user created successfully" });
+    } catch (error) {
+      console.error("Setup error:", error);
+      res.status(400).json({ error: "Invalid request" });
+    }
+  });
+  
+  // Get current configuration (protected route)
+  app.get("/api/configuration", requireAuth, async (req, res) => {
     try {
       let config = await storage.getConfiguration();
       
@@ -110,8 +204,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create or update configuration
-  app.post("/api/configuration", async (req, res) => {
+  // Create or update configuration (protected route)
+  app.post("/api/configuration", requireAuth, async (req, res) => {
     try {
       const validatedData = insertConfigurationSchema.parse(req.body);
       
