@@ -6,6 +6,14 @@ import { TelegramService } from "./services/telegram";
 import { OpenAIService } from "./services/openai";
 import bcrypt from "bcryptjs";
 
+// Extend Express Request type to include session
+declare module 'express-session' {
+  interface SessionData {
+    userId?: number;
+    username?: string;
+  }
+}
+
 // Middleware to check if user is authenticated
 function requireAuth(req: any, res: any, next: any) {
   if (req.session?.userId) {
@@ -19,10 +27,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication routes
   app.post("/api/auth/login", async (req, res) => {
     try {
+      console.log("Login request body:", req.body);
+      console.log("Session object:", req.session);
+      
       const { username, password } = loginSchema.parse(req.body);
       
       const user = await storage.getUserByUsername(username);
-      if (!user || !bcrypt.compareSync(password, user.passwordHash)) {
+      if (!user) {
+        console.log("User not found:", username);
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+      
+      const passwordValid = bcrypt.compareSync(password, user.passwordHash);
+      console.log("Password valid:", passwordValid);
+      
+      if (!passwordValid) {
         return res.status(401).json({ error: "Invalid credentials" });
       }
       
@@ -30,8 +49,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateUserLastLogin(user.id);
       
       // Set session
+      if (!req.session) {
+        console.error("Session object is undefined");
+        return res.status(500).json({ error: "Session not initialized" });
+      }
+      
       req.session.userId = user.id;
       req.session.username = user.username;
+      
+      console.log("Session after login:", req.session);
       
       res.json({ 
         success: true, 
