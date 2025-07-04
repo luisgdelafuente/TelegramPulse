@@ -28,6 +28,7 @@
 - Live API connectivity testing (Telegram MTProto + OpenAI)
 - Production configuration and error handling
 - ❌ **PENDING**: Frontend login redirect issue - authentication works but page doesn't redirect after login
+- ❌ **BLOCKING**: Telegram session authentication expired - requires SMS verification code input that cannot be automated
 
 #### Phase 2.1: Channel Optimization (COMPLETED ✓)
 - ✅ Fixed timeout issues from testing 100+ channels
