@@ -1,8 +1,33 @@
 import { AdminPanel } from "@/components/admin-panel";
 import { StatisticsDashboard } from "@/components/statistics-dashboard";
 import { Navigation } from "@/components/navigation";
+import { useAuth } from "@/contexts/auth-context";
+import { useLocation } from "wouter";
+import { useEffect } from "react";
+import { Loader2 } from "lucide-react";
 
 export default function Admin() {
+  const { isAuthenticated, isLoading } = useAuth();
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      setLocation("/login");
+    }
+  }, [isAuthenticated, isLoading, setLocation]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null; // Will redirect to login
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />

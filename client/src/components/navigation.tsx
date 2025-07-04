@@ -60,21 +60,23 @@ export function Navigation() {
               })}
             </div>
 
-            {/* User Info and Logout */}
-            <div className="flex items-center space-x-3 border-l border-gray-200 pl-4">
-              <span className="text-sm text-gray-600">
-                Bienvenido, {user?.username}
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => logout()}
-                className="text-gray-600 hover:text-red-600"
-              >
-                <LogOut className="h-4 w-4 mr-1" />
-                Salir
-              </Button>
-            </div>
+            {/* User Info and Logout - Only show when authenticated */}
+            {user && (
+              <div className="flex items-center space-x-3 border-l border-gray-200 pl-4">
+                <span className="text-sm text-gray-600">
+                  Bienvenido, {user.username}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => logout()}
+                  className="text-gray-600 hover:text-red-600"
+                >
+                  <LogOut className="h-4 w-4 mr-1" />
+                  Salir
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>

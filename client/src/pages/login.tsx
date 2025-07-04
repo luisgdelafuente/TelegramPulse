@@ -5,18 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Loader2, Lock } from "lucide-react";
+import { useLocation } from "wouter";
 
-interface LoginPageProps {
-  onLogin: () => void;
-}
-
-export default function LoginPage({ onLogin }: LoginPageProps) {
+export default function LoginPage() {
   const { toast } = useToast();
   const [username, setUsername] = useState("admin");
   const [password, setPassword] = useState("");
 
+  const [, setLocation] = useLocation();
+  
   const loginMutation = useMutation({
     mutationFn: async (credentials: { username: string; password: string }) => {
       const response = await apiRequest("POST", "/api/auth/login", credentials);
@@ -27,7 +26,10 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
         title: "Acceso exitoso",
         description: "Bienvenido al panel de administración",
       });
-      onLogin();
+      // Invalidate auth queries to refresh user state
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      // Redirect to admin panel
+      setLocation("/admin");
     },
     onError: (error: any) => {
       toast({
