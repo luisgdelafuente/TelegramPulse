@@ -34,7 +34,7 @@ export class TelegramService {
       const execAsync = promisify(exec);
       
       const channelsJson = JSON.stringify(channels);
-      const pythonCommand = `python3 server/services/telegram_simple.py "${this.apiId}" "${this.apiHash}" "${this.phone}" '${channelsJson}' ${minutesBack}`;
+      const pythonCommand = `cd server/services && python3 telegram_simple.py "${this.apiId}" "${this.apiHash}" "${this.phone}" '${channelsJson}' ${minutesBack}`;
       
       console.log('Executing Telegram MTProto client...');
       console.log(`Processing ${channels.length} channels with ${minutesBack} minutes lookback`);
